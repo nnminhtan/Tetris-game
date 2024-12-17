@@ -13,8 +13,10 @@ public class Main {
             System.out.println("Starting as server...");
             new GameServer(); // Start the server
         } else if (mode.equals("c")) {
+            System.out.println("Enter your name: ");
+            String clientName = scanner.nextLine().trim(); // Get the client's name
             System.out.println("Starting as client...");
-            new Window(); // Start the client window
+            new Window(clientName); // Pass the name to the Window
         } else {
             System.out.println("Invalid choice. Exiting...");
         }

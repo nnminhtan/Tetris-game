@@ -1,5 +1,9 @@
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.KeyAdapter;
 import java.util.*;
+import javax.swing.SwingUtilities;
 
 public class Tetris  {
 	// grid of color ids that stores what kind of block is where
@@ -166,6 +170,19 @@ public class Tetris  {
 		this.panel = panel;
 		this.id = id;
 		t.scheduleAtFixedRate(move, 1000, 1);
+		// Add KeyListener to handle key events
+		panel.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_Q) {
+					// Navigate back to RoomManager
+					panel.setVisible(false); // Hide the Tetris panel
+					new RoomManager("Room Name", new ArrayList<>()); // Replace with actual room name and player list
+				}
+			}
+		});
+		panel.setFocusable(true); // Ensure the panel can receive key events
+		panel.requestFocusInWindow(); // Request focus for key events
 	}
 	// adjust the level based on the number of lines cleared
 	private void adjustLevel () {

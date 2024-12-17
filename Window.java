@@ -1,26 +1,27 @@
 import java.awt.*;
 import java.io.*;
 import java.net.Socket;
-import java.util.*;
+
 public class Window extends Frame {
-	private static final long serialVersionUID = -1324363758675184283L;
-	// private BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-	// private StringTokenizer st;
-	private BufferedReader br;
+    private static final long serialVersionUID = -1324363758675184283L;
+    private BufferedReader br;
     private PrintWriter pw;
-	private int numOfPlayers;
-	
-	public Window() throws IOException {
-        connectToServer();
+    private int numOfPlayers;
+
+    public Window(String clientName) throws IOException { // Accept client name as a parameter
+        connectToServer(clientName);
         setupRoomSelectionUI();
     }
 
-    private void connectToServer() throws IOException {
+    private void connectToServer(String clientName) throws IOException {
         System.out.println("Connecting to server...");
-        Socket socket = new Socket("172.16.195.132", 8888); // Server IP and port
+        Socket socket = new Socket("192.168.0.101", 8888); // Server IP and port
         br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         pw = new PrintWriter(socket.getOutputStream(), true);
         System.out.println("Connected to server!");
+
+        // Send the client's name to the server
+        pw.println(clientName);
 
         // Listen to server messages in a separate thread
         new Thread(() -> {
@@ -57,22 +58,4 @@ public class Window extends Frame {
 
         setVisible(true);
     }
-	// Window () throws IOException {
-	// 	System.out.println("Enter number of players: ");
-	// 	numOfPlayers = readInt();
-	// 	setTitle("Tetris");
-	// 	setSize(400*numOfPlayers, 600);
-	// 	setLocation(100, 100);
-	// 	setResizable(false);
-	// 	add(new TetrisPanel(numOfPlayers));
-	// 	setVisible(true);
-	// }
-	// private String next () throws IOException {
-	// 	while (st == null || !st.hasMoreTokens())
-	// 		st = new StringTokenizer(br.readLine().trim());
-	// 	return st.nextToken();
-	// }
-	// private int readInt() throws IOException {
-	// 	return Integer.parseInt(next());
-	// }
 }

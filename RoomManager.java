@@ -1,105 +1,55 @@
-// import javax.swing.*;
-// import java.awt.*;
-// import java.awt.event.ActionEvent;
-// import java.awt.event.ActionListener;
-// import java.io.IOException;
+import java.awt.*;
+import java.util.List;
+import javax.swing.*;
 
-// public class RoomManager extends JFrame {
-//     private CardLayout cardLayout;
-//     private JPanel mainPanel;
-//     private JPanel roomSelectionPanel;
-//     private JPanel gamePanel;
+public class RoomManager extends JFrame {
+    private CardLayout cardLayout;
+    private JPanel mainPanel;
+    private JPanel roomInfoPanel;
 
-//     public RoomManager() {
-//         setTitle("Tetris Room Manager");
-//         setSize(800, 600);
-//         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    public RoomManager(String roomName, List<String> players) {
+        setTitle("Room: " + roomName);
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Close this window only
 
-//         cardLayout = new CardLayout();
-//         mainPanel = new JPanel(cardLayout);
+        roomInfoPanel = createRoomInfoPanel(roomName, players);
+        add(roomInfoPanel);
 
-//         // Room Selection UI
-//         roomSelectionPanel = createRoomSelectionPanel();
-//         mainPanel.add(roomSelectionPanel, "RoomSelection");
+        setVisible(true);
+    }
 
-//         // Placeholder for Tetris Game Panel
-//         gamePanel = new JPanel();
-//         gamePanel.setBackground(Color.BLACK);
-//         mainPanel.add(gamePanel, "GamePanel");
+    private JPanel createRoomInfoPanel(String roomName, List<String> players) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-//         add(mainPanel);
-//         cardLayout.show(mainPanel, "RoomSelection");
-//     }
+        panel.add(new JLabel("Room: " + roomName));
+        panel.add(new JLabel("Players in this room:"));
 
-//     private JPanel createRoomSelectionPanel() {
-//         JPanel panel = new JPanel(new BorderLayout());
+        for (String player : players) {
+            panel.add(new JLabel(player));
+        }
 
-//         // Room List
-//         DefaultListModel<String> roomListModel = new DefaultListModel<>();
-//         JList<String> roomList = new JList<>(roomListModel);
-//         roomListModel.addElement("Room 1");
-//         roomListModel.addElement("Room 2");
-//         roomListModel.addElement("Room 3");
+        // Play Button
+        JButton playButton = new JButton("Play");
+        playButton.addActionListener(e -> {
+            // Open TetrisPanel when Play button is clicked
+            JFrame tetrisFrame = new JFrame("Tetris Game");
+            TetrisPanel tetrisPanel = new TetrisPanel(players.size()); // Pass the number of players
+            tetrisFrame.add(tetrisPanel);
+            tetrisFrame.setSize(800, 600); // Set size for the Tetris game window
+            tetrisFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            tetrisFrame.setVisible(true);
+        });
+        panel.add(playButton);
 
-//         // Add Room Button
-//         JButton createRoomButton = new JButton("Create Room");
-//         createRoomButton.addActionListener(e -> {
-//             String newRoom = JOptionPane.showInputDialog(this, "Enter Room Name:");
-//             if (newRoom != null && !newRoom.trim().isEmpty()) {
-//                 roomListModel.addElement(newRoom);
-//             }
-//         });
+        // Back Button
+        JButton backButton = new JButton("Back");
+        backButton.addActionListener(e -> {
+            dispose(); // Close the RoomManager window
+            GameServer.main(null); // Call the main method of GameServer to reopen it
+        });
+        panel.add(backButton);
 
-//         // Join Room Button
-//         JButton joinRoomButton = new JButton("Join Room");
-//         joinRoomButton.addActionListener(e -> {
-//             String selectedRoom = roomList.getSelectedValue();
-//             if (selectedRoom != null) {
-//                 // Transition to Game Panel
-//                 try {
-//                     startGame(selectedRoom);
-//                 } catch (IOException e1) {
-//                     // TODO Auto-generated catch block
-//                     e1.printStackTrace();
-//                 }
-//             } else {
-//                 JOptionPane.showMessageDialog(this, "Please select a room to join.");
-//             }
-//         });
-
-//         // Layout
-//         JPanel buttonPanel = new JPanel();
-//         buttonPanel.add(createRoomButton);
-//         buttonPanel.add(joinRoomButton);
-
-//         panel.add(new JScrollPane(roomList), BorderLayout.CENTER);
-//         panel.add(buttonPanel, BorderLayout.SOUTH);
-
-//         return panel;
-//     }
-
-//     // private void startGame(String roomName) {
-//     //     // Initialize TetrisPanel with room-specific data
-//     //     gamePanel.removeAll();
-//     //     TetrisPanel tetrisPanel = new TetrisPanel(2); // Example: 2 players
-//     //     gamePanel.add(tetrisPanel);
-//     //     cardLayout.show(mainPanel, "GamePanel");
-
-//     //     // Start the game
-//     //     tetrisPanel.requestFocusInWindow();
-//     // }
-//     private void startGame(String roomName) throws IOException {
-//         int numOfPlayers = 2; // Example: Use actual logic based on room configuration
-//         Window gameWindow = new Window(numOfPlayers);
-//         gameWindow.setVisible(true);
-//         dispose(); // Close the RoomManager window
-//     }
-    
-
-//     public static void main(String[] args) {
-//         SwingUtilities.invokeLater(() -> {
-//             RoomManager manager = new RoomManager();
-//             manager.setVisible(true);
-//         });
-//     }
-// }
+        return panel;
+    }
+}

@@ -2,6 +2,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
+import javax.swing.SwingUtilities;
 
 public class GameServer {
     private static final int PORT = 8888; // Server port
@@ -14,7 +16,15 @@ public class GameServer {
         while (true) {
             Socket clientSocket = serverSocket.accept();
             System.out.println("Client connected: " + clientSocket.getInetAddress());
-            new ClientHandler(clientSocket).start();
+            new ClientHandler(clientSocket).start(); // Pass the JFrame to the ClientHandler
+        }
+    }
+
+    public static void main(String[] args) {
+        try {
+            new GameServer(); // Start the server
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -41,6 +51,13 @@ public class GameServer {
                 out.println("Enter your name:");
                 clientName = in.readLine();
 
+                // Ensure client has entered a name
+                while (clientName == null || clientName.trim().isEmpty()) {
+                    out.println("Name cannot be empty. Please enter your name:");
+                    clientName = in.readLine();
+                }
+
+                // Proceed to command input
                 while (true) {
                     out.println("Enter a command: CREATE <room>, JOIN <room>, or LIST");
                     String command = in.readLine();
@@ -78,6 +95,19 @@ public class GameServer {
             currentRoom = roomName;
             rooms.get(roomName).add(this);
             out.println("Joined room " + roomName);
+
+            // Open RoomManager
+            SwingUtilities.invokeLater(() -> {
+                List<String> playersInRoom = getPlayersInRoom(roomName);
+                new RoomManager(roomName, playersInRoom); // Pass room name and players
+            });
+        }
+
+        private List<String> getPlayersInRoom(String roomName) {
+            // Return the list of players in the specified room
+            return rooms.get(roomName).stream()
+                    .map(handler -> handler.clientName) // Assuming clientName is accessible
+                    .collect(Collectors.toList());
         }
 
         private void listRooms() {
