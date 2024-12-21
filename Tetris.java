@@ -3,6 +3,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyAdapter;
 import java.util.*;
+import java.util.Queue;
+
 import javax.swing.SwingUtilities;
 
 public class Tetris  {
@@ -164,11 +166,12 @@ public class Tetris  {
 			lockTime++;
 		}
 	};
-	Tetris (int panelC, int panelR, TetrisPanel panel, int id) {
+	Tetris (int panelC, int panelR, TetrisPanel panel, int id, String clientName) {
 		this.panelC = panelC;
 		this.panelR = panelR;
 		this.panel = panel;
 		this.id = id;
+		System.out.println(clientName);
 		t.scheduleAtFixedRate(move, 1000, 1);
 		// Add KeyListener to handle key events
 		panel.addKeyListener(new KeyAdapter() {
@@ -177,7 +180,7 @@ public class Tetris  {
 				if (e.getKeyCode() == KeyEvent.VK_Q) {
 					// Navigate back to RoomManager
 					panel.setVisible(false); // Hide the Tetris panel
-					new RoomManager("Room Name", new ArrayList<>()); // Replace with actual room name and player list
+					new RoomManager("Room Name", new ArrayList<>(), clientName); // Replace with actual room name and player list
 				}
 			}
 		});

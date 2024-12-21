@@ -25,7 +25,7 @@ public class TetrisPanel extends Panel implements KeyListener {
 	
 	private BufferedReader br;
 	private int[][] key;
-	TetrisPanel (int numOfPlayers) {
+	TetrisPanel (int numOfPlayers, String clientName) {
 		this.numOfPlayers = numOfPlayers;
 		key = new int[numOfPlayers][6];
 		screens = new Tetris[numOfPlayers];
@@ -40,7 +40,7 @@ public class TetrisPanel extends Panel implements KeyListener {
 		} 
 		addKeyListener(this);
 		for (int i = 0; i < numOfPlayers; i++)
-			screens[i] = new Tetris(400*i, 0, this, i);
+			screens[i] = new Tetris(400*i, 0, this, i, clientName);
 	}
 	public void paint (Graphics g) {
 		dim = getSize();

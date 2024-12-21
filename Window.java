@@ -2,20 +2,25 @@ import java.awt.*;
 import java.io.*;
 import java.net.Socket;
 
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+
 public class Window extends Frame {
     private static final long serialVersionUID = -1324363758675184283L;
     private BufferedReader br;
     private PrintWriter pw;
     private int numOfPlayers;
+    private String userName;
 
     public Window(String clientName) throws IOException { // Accept client name as a parameter
         connectToServer(clientName);
+        userName = clientName;
         setupRoomSelectionUI();
     }
 
     private void connectToServer(String clientName) throws IOException {
         System.out.println("Connecting to server...");
-        Socket socket = new Socket("192.168.0.101", 8888); // Server IP and port
+        Socket socket = new Socket("172.16.195.132", 8888); // Server IP and port
         br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         pw = new PrintWriter(socket.getOutputStream(), true);
         System.out.println("Connected to server!");
@@ -24,16 +29,38 @@ public class Window extends Frame {
         pw.println(clientName);
 
         // Listen to server messages in a separate thread
+        // new Thread(() -> {
+        //     try {
+        //         String message;
+        //         while ((message = br.readLine()) != null) {
+        //             System.out.println("Server: " + message);
+        //         }
+        //     } catch (IOException e) {
+        //         System.out.println("Disconnected from server.");
+        //     }
+        // }).start();
         new Thread(() -> {
             try {
                 String message;
                 while ((message = br.readLine()) != null) {
-                    System.out.println("Server: " + message);
+                    if (message.equals("START_MATCH")) {
+                        SwingUtilities.invokeLater(() -> {
+                            JFrame tetrisFrame = new JFrame("Tetris Game");
+                            TetrisPanel tetrisPanel = new TetrisPanel(numOfPlayers, userName); // Initialize game
+                            tetrisFrame.add(tetrisPanel);
+                            tetrisFrame.setSize(800, 600);
+                            tetrisFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                            tetrisFrame.setVisible(true);
+                        });
+                    } else {
+                        System.out.println("Server: " + message);
+                    }
                 }
             } catch (IOException e) {
                 System.out.println("Disconnected from server.");
             }
         }).start();
+
     }
 
     private void setupRoomSelectionUI() {
