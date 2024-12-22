@@ -1,7 +1,6 @@
 import java.awt.*;
 import java.io.*;
 import java.net.Socket;
-
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
@@ -12,7 +11,7 @@ public class Window extends Frame {
     private int numOfPlayers;
     private String userName;
 
-    public Window(String clientName) throws IOException { // Accept client name as a parameter
+    public Window(String clientName) throws IOException {
         connectToServer(clientName);
         userName = clientName;
         setupRoomSelectionUI();
@@ -20,47 +19,47 @@ public class Window extends Frame {
 
     private void connectToServer(String clientName) throws IOException {
         System.out.println("Connecting to server...");
-        Socket socket = new Socket("172.16.195.132", 8888); // Server IP and port
+        Socket socket = new Socket("192.168.0.102", 8888);
         br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         pw = new PrintWriter(socket.getOutputStream(), true);
         System.out.println("Connected to server!");
 
-        // Send the client's name to the server
         pw.println(clientName);
 
-        // Listen to server messages in a separate thread
-        // new Thread(() -> {
-        //     try {
-        //         String message;
-        //         while ((message = br.readLine()) != null) {
-        //             System.out.println("Server: " + message);
-        //         }
-        //     } catch (IOException e) {
-        //         System.out.println("Disconnected from server.");
-        //     }
-        // }).start();
+        // Create final reference for TetrisPanel
+        final TetrisPanel[] gamePanelRef = new TetrisPanel[1];
+
         new Thread(() -> {
             try {
                 String message;
                 while ((message = br.readLine()) != null) {
-                    if (message.equals("START_MATCH")) {
+                    if (message.startsWith("START_MATCH:")) {
+                        String[] parts = message.split(":");
+                        numOfPlayers = Integer.parseInt(parts[1]);
+                        String opponentName = parts[2];
                         SwingUtilities.invokeLater(() -> {
-                            JFrame tetrisFrame = new JFrame("Tetris Game");
-                            TetrisPanel tetrisPanel = new TetrisPanel(numOfPlayers, userName); // Initialize game
+                            JFrame tetrisFrame = new JFrame("Tetris Game - " + clientName);
+                            TetrisPanel tetrisPanel = new TetrisPanel(numOfPlayers, clientName, pw);
+                            gamePanelRef[0] = tetrisPanel;
                             tetrisFrame.add(tetrisPanel);
                             tetrisFrame.setSize(800, 600);
                             tetrisFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                             tetrisFrame.setVisible(true);
+                            tetrisPanel.requestFocusInWindow();
                         });
-                    } else {
-                        System.out.println("Server: " + message);
+                    } else if (message.startsWith("OPPONENT_STATE:")) {
+                        final String gameState = message.substring("OPPONENT_STATE:".length());
+                        if (gamePanelRef[0] != null) {
+                            SwingUtilities.invokeLater(() -> {
+                                gamePanelRef[0].updateOpponentState(gameState);
+                            });
+                        }
                     }
                 }
             } catch (IOException e) {
                 System.out.println("Disconnected from server.");
             }
         }).start();
-
     }
 
     private void setupRoomSelectionUI() {

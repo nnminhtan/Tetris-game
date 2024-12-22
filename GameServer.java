@@ -3,7 +3,6 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
-import javax.swing.SwingUtilities;
 
 public class GameServer {
     private static final int PORT = 8888; // Server port
@@ -165,8 +164,38 @@ public class GameServer {
 
         }
         private void broadcastToRoom(String roomName, String message) {
-            for (ClientHandler handler : rooms.get(roomName)) {
-                handler.out.println(message);
+            List<ClientHandler> handlers = rooms.get(roomName);
+            if (handlers != null) {
+                if (message.startsWith("GAME_STATE:")) {
+                    // Extract sender's name and send to other player
+                    String[] parts = message.split(":");
+                    String senderName = parts[1];
+                    String gameState = parts[2];
+                    
+                    for (ClientHandler handler : handlers) {
+                        if (!handler.clientName.equals(senderName)) {
+                            handler.out.println("OPPONENT_STATE:" + gameState);
+                        }
+                    }
+                } else if (message.equals("START_MATCH")) {
+                    // Start game for both players
+                    for (int i = 0; i < handlers.size(); i++) {
+                        ClientHandler handler = handlers.get(i);
+                        ClientHandler opponent = handlers.get(i == 0 ? 1 : 0);
+                        handler.out.println("START_MATCH:" + handlers.size() + ":" + opponent.clientName);
+                    }
+                } else if (message.startsWith("GARBAGE:")) {
+                    // Handle garbage lines
+                    String[] parts = message.split(":");
+                    String senderName = parts[1];
+                    int lines = Integer.parseInt(parts[2]);
+                    
+                    for (ClientHandler handler : handlers) {
+                        if (!handler.clientName.equals(senderName)) {
+                            handler.out.println("ADD_GARBAGE:" + lines);
+                        }
+                    }
+                }
             }
         }
         private List<String> getPlayersInRoom(String roomName) {

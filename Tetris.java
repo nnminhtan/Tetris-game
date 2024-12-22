@@ -4,6 +4,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.KeyAdapter;
 import java.util.*;
 import java.util.Queue;
+import java.io.PrintWriter;
 
 import javax.swing.SwingUtilities;
 
@@ -13,10 +14,6 @@ public class Tetris  {
 
 	// dimensions of the frame
 	private final int panelR, panelC;
-
-	// Big panel
-	private final TetrisPanel panel;
-
 	// the delay values for levels: the array index corresponds to the level. After level 20 the delay remains consistent
 	protected static final int[] GLOBAL_DELAY = {800,720,630,550,470,380,300,220,130,100,80,80,80,70,70,70,30,30,30,20};
 
@@ -166,12 +163,17 @@ public class Tetris  {
 			lockTime++;
 		}
 	};
-	Tetris (int panelC, int panelR, TetrisPanel panel, int id, String clientName) {
-		this.panelC = panelC;
-		this.panelR = panelR;
+	private TetrisPanel panel;
+	private PrintWriter pw;
+	private String playerName;
+
+	public Tetris(int x, int y, TetrisPanel panel, int id, String playerName) {
 		this.panel = panel;
+		this.playerName = playerName;
+		this.panelC = x;
+		this.panelR = y;
 		this.id = id;
-		System.out.println(clientName);
+		System.out.println(playerName);
 		t.scheduleAtFixedRate(move, 1000, 1);
 		// Add KeyListener to handle key events
 		panel.addKeyListener(new KeyAdapter() {
@@ -180,13 +182,19 @@ public class Tetris  {
 				if (e.getKeyCode() == KeyEvent.VK_Q) {
 					// Navigate back to RoomManager
 					panel.setVisible(false); // Hide the Tetris panel
-					new RoomManager("Room Name", new ArrayList<>(), clientName); // Replace with actual room name and player list
+					new RoomManager("Room Name", new ArrayList<>(), playerName); // Replace with actual room name and player list
 				}
 			}
 		});
 		panel.setFocusable(true); // Ensure the panel can receive key events
 		panel.requestFocusInWindow(); // Request focus for key events
 	}
+
+	// Add method to set PrintWriter
+	public void setPrintWriter(PrintWriter pw) {
+		this.pw = pw;
+	}
+
 	// adjust the level based on the number of lines cleared
 	private void adjustLevel () {
 		level = linesCleared/4;
@@ -414,7 +422,7 @@ public class Tetris  {
 		curr.hir += dr;
 		return true;
 	}
-	protected void addGarbage (int lines) {
+	protected void addGarbageLines (int lines) {
 		for (int i = 0; i < 22; i++) {
 			for (int j = 0; j < 10; j++) {
 				if (grid[i][j] != 0 && i - lines < 0) {
@@ -446,5 +454,43 @@ public class Tetris  {
 					curr.pos[i].r--;
 		}
 		panel.repaint();
+	}
+
+	public int getGridValue(int row, int col) {
+		return grid[row][col];
+	}
+
+	public void setGridValue(int row, int col, int value) {
+		grid[row][col] = value;
+	}
+
+	public int getLinesCleared() {
+		return linesCleared;
+	}
+
+	public void setLinesCleared(int value) {
+		linesCleared = value;
+	}
+
+	public int getLevel() {
+		return level;
+	}
+
+	public void setLevel(int value) {
+		level = value;
+	}
+
+	protected void sendGarbage(int lines) {
+		if (lines > 0 && pw != null) {
+			pw.println("GARBAGE:" + playerName + ":" + lines);
+		}
+	}
+
+	public void addGarbage(int lines) {
+		// Existing garbage line addition code...
+		// After adding garbage lines
+		if (panel != null) {
+			panel.sendGameState(); // Call sendGameState through panel reference
+		}
 	}
 }

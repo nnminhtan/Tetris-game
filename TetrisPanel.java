@@ -25,22 +25,46 @@ public class TetrisPanel extends Panel implements KeyListener {
 	
 	private BufferedReader br;
 	private int[][] key;
-	TetrisPanel (int numOfPlayers, String clientName) {
+	private String playerName;
+	private String opponentName;
+	private Tetris playerGame;
+	private Tetris opponentGame;
+	
+	private PrintWriter pw;
+	
+	TetrisPanel (int numOfPlayers, String playerName, PrintWriter pw) {
+		this.pw = pw;
 		this.numOfPlayers = numOfPlayers;
-		key = new int[numOfPlayers][6];
-		screens = new Tetris[numOfPlayers];
+		this.playerName = playerName;
+		key = new int[1][6]; // Only need controls for the player's game
+		screens = new Tetris[2]; // Two screens: player and opponent
+		
+		// Default key mappings
+		int[][] defaultKeys = {
+			{KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT, KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_SHIFT, KeyEvent.VK_SPACE}
+		};
+		
 		try {
 			br = new BufferedReader(new FileReader("INPUT"));
-			for (int i = 0; i < numOfPlayers; i++)
-				for (int j = 0; j < 6; j++)
-					key[i][j] = Integer.parseInt(br.readLine().trim());
+			for (int j = 0; j < 6; j++)
+				key[0][j] = defaultKeys[0][j];
 		} catch (IOException ie) {
-			System.out.println("INVALID INPUT SEQUENCE");
-			System.exit(0);
-		} 
+			System.out.println("Using default key mappings");
+			System.arraycopy(defaultKeys[0], 0, key[0], 0, 6);
+		}
+		
 		addKeyListener(this);
-		for (int i = 0; i < numOfPlayers; i++)
-			screens[i] = new Tetris(400*i, 0, this, i, clientName);
+		setFocusable(true);
+		requestFocusInWindow();
+		
+		// Initialize player's game on the left side
+		playerGame = new Tetris(0, 0, this, 0, playerName);
+		playerGame.setPrintWriter(pw);
+		screens[0] = playerGame;
+		
+		// Initialize opponent's game on the right side
+		opponentGame = new Tetris(400, 0, this, 1, "Opponent");
+		screens[1] = opponentGame;
 	}
 	public void paint (Graphics g) {
 		dim = getSize();
@@ -51,13 +75,25 @@ public class TetrisPanel extends Panel implements KeyListener {
 	public void update (Graphics g) {
 		gi.setColor(background);
 		gi.fillRect(0, 0, dim.width, dim.height);
-		for (int i = 0; i < numOfPlayers; i++) {
-			if (screens[i] == null)
-				continue;
-			screens[i].displayGrid(gi);
-			screens[i].displayPieces(gi);
-			screens[i].displayUI(gi);
-		}
+		
+		// Draw player's game
+		screens[0].displayGrid(gi);
+		screens[0].displayPieces(gi);
+		screens[0].displayUI(gi);
+		
+		// Draw opponent's game
+		screens[1].displayGrid(gi);
+		screens[1].displayPieces(gi);
+		screens[1].displayUI(gi);
+		
+		// Draw dividing line
+		gi.setColor(Color.WHITE);
+		gi.drawLine(400, 0, 400, dim.height);
+		
+		// Draw player names
+		gi.drawString("Player: " + playerName, 10, 20);
+		gi.drawString("Opponent", 410, 20);
+		
 		g.drawImage(bi, 0, 0, this);
 	}
 
@@ -140,6 +176,7 @@ public class TetrisPanel extends Panel implements KeyListener {
 				}
 			}
 		}
+		sendGameState();
 		repaint();
 	}
 	protected void setGameOver () {
@@ -154,5 +191,67 @@ public class TetrisPanel extends Panel implements KeyListener {
 			rand++;
 		screens[rand].addGarbage(send);
 //		System.out.println("SENT " + send);
+	}
+	
+	public void sendGameState() {
+		if (screens[0] != null) {
+			StringBuilder state = new StringBuilder();
+			// Send grid state
+			for (int i = 0; i < 22; i++) {
+				for (int j = 0; j < 10; j++) {
+					state.append(screens[0].getGridValue(i, j)).append(",");
+				}
+			}
+			// Send current piece state
+			if (screens[0].curr != null) {
+				state.append("P,");
+				for (Piece.Point p : screens[0].curr.pos) {
+					state.append(p.r).append(",").append(p.c).append(",");
+				}
+				state.append(screens[0].curr.id).append(",");
+			} else {
+				state.append("N,"); // No current piece
+			}
+			
+			// Send score, level, and hold piece
+			state.append(screens[0].getLinesCleared()).append(",");
+			state.append(screens[0].getLevel()).append(",");
+			state.append(screens[0].holdId);
+			
+			pw.println("GAME_STATE:" + playerName + ":" + state.toString());
+		}
+	}
+	
+	public void updateOpponentState(String gameState) {
+		String[] parts = gameState.split(",");
+		int index = 0;
+		
+		// Update grid
+		for (int i = 0; i < 22; i++) {
+			for (int j = 0; j < 10; j++) {
+				screens[1].setGridValue(i, j, Integer.parseInt(parts[index++]));
+			}
+		}
+		
+		// Update current piece
+		String pieceState = parts[index++];
+		if (pieceState.equals("P")) {
+			Piece.Point[] newPos = new Piece.Point[4];
+			for (int i = 0; i < 4; i++) {
+				int r = Integer.parseInt(parts[index++]);
+				int c = Integer.parseInt(parts[index++]);
+				newPos[i] = new Piece.Point(r, c);
+			}
+			int pieceId = Integer.parseInt(parts[index++]);
+			screens[1].curr = screens[1].p.getActive(pieceId - 1);
+			screens[1].curr.pos = newPos;
+		}
+		
+		// Update score and level
+		screens[1].setLinesCleared(Integer.parseInt(parts[index++]));
+		screens[1].setLevel(Integer.parseInt(parts[index++]));
+		screens[1].holdId = Integer.parseInt(parts[index]);
+		
+		repaint();
 	}
 }
