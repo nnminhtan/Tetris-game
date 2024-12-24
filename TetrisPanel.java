@@ -45,6 +45,9 @@ public class TetrisPanel extends Panel implements KeyListener {
 		// Add more colors as needed for your Tetris pieces
 	};
 
+	// Add a new variable to store the opponent's score
+	private int opponentScore = 0;
+
 	TetrisPanel (int numOfPlayers, String[] playerNames, PrintWriter pw) {
 		this.pw = pw;
 		this.numOfPlayers = numOfPlayers;
@@ -75,7 +78,7 @@ public class TetrisPanel extends Panel implements KeyListener {
 		playerGame.setPrintWriter(pw);
 		screens[0] = playerGame;
 		
-		// ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
+		// ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
 		// Initialize opponent's game to get state from the other player
 		opponentGame = screens[0]; // Use the player's game state for the opponent
 		screens[1] = opponentGame;
@@ -104,9 +107,9 @@ public class TetrisPanel extends Panel implements KeyListener {
 		gi.setColor(Color.WHITE);
 		gi.drawLine(400, 0, 400, dim.height);
 		
-		// Draw player names
-		gi.drawString("Player: " + playerNames[0], 10, 20);
-		gi.drawString("Opponent: " + playerNames[1], 410, 20);
+		// Draw player names and scores
+		gi.drawString("Player: " + playerNames[0] + " Score: " + screens[0].getLinesCleared(), 10, 20);
+		gi.drawString("Opponent: " + playerNames[1] + " Score: " + opponentScore, 410, 20);
 		
 		g.drawImage(bi, 0, 0, this);
 	}
@@ -230,7 +233,8 @@ public class TetrisPanel extends Panel implements KeyListener {
 			// Send score, level, and hold piece
 			state.append(screens[0].getLinesCleared()).append(",");
 			state.append(screens[0].getLevel()).append(",");
-			state.append(screens[0].holdId);
+			state.append(screens[0].holdId).append(",");
+			state.append(opponentScore); // Send opponent's score
 			
 			pw.println("GAME_STATE:" + playerNames[0] + ":" + state.toString());
 		}
@@ -262,11 +266,23 @@ public class TetrisPanel extends Panel implements KeyListener {
 		}
 
 		// Update score and level
+		opponentScore = Integer.parseInt(parts[index++]); // Update opponent's score
 		screens[1].setLinesCleared(Integer.parseInt(parts[index++]));
 		screens[1].setLevel(Integer.parseInt(parts[index++]));
+		
 		screens[1].holdId = Integer.parseInt(parts[index]);
 
 		repaint();
+		checkForWinner(); // Check for a winner after updating the state
+	}
+
+	// Method to check for a winner
+	private void checkForWinner() {
+		if (screens[0].getLinesCleared() >= 100 || opponentScore >= 100) { // Example winning condition
+			String winner = screens[0].getLinesCleared() >= opponentScore ? playerNames[0] : playerNames[1];
+			System.out.println("Winner: " + winner);
+			// You can also display a message on the UI or handle game over logic here
+		}
 	}
 
 	public void setOpponentGrid(int[][] grid) {
