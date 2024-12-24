@@ -79,7 +79,7 @@ public class TetrisPanel extends Panel implements KeyListener {
 		screens[0] = playerGame;
 
 		// Initialize opponent's game
-		opponentGame = new Tetris(400, 0, this, 1, playerNames[1]); // Sử dụng tên thật của đối thủ
+		opponentGame = new Tetris(400, 0, this, 1, playerNames[1]); // Sử dụng tên th���t của đối thủ
 		screens[1] = opponentGame;
 
 		this.roomData = new RoomData(roomName); // Sử dụng tên phòng được truyền vào
@@ -98,19 +98,19 @@ public class TetrisPanel extends Panel implements KeyListener {
 		gi.setColor(background);
 		gi.fillRect(0, 0, dim.width, dim.height);
 
-		// Draw player's game
+		// Chỉ vẽ màn hình người chơi bên trái
 		screens[0].displayGrid(gi);
 		screens[0].displayPieces(gi);
 		screens[0].displayUI(gi);
 
-		// Draw opponent's game
-		screens[1].displayGrid(gi);
-		screens[1].displayPieces(gi);
-		screens[1].displayUI(gi);
+		// Bỏ qua việc vẽ màn hình đối thủ
+		// screens[1].displayGrid(gi);
+		// screens[1].displayPieces(gi);
+		// screens[1].displayUI(gi);
 
-		// Draw dividing line
-		gi.setColor(Color.WHITE);
-		gi.drawLine(400, 0, 400, dim.height);
+		// Bỏ qua việc vẽ đường phân cách
+		// gi.setColor(Color.WHITE);
+		// gi.drawLine(400, 0, 400, dim.height);
 
 		updatePlayerDisplay(gi);
 
@@ -119,21 +119,21 @@ public class TetrisPanel extends Panel implements KeyListener {
 
 	private void updatePlayerDisplay(Graphics gi) {
 		String currentPlayer = playerNames[0];
-		String opponentName = roomData.getOpponentName(currentPlayer);
-		int opponentScore = roomData.getOpponentScore(currentPlayer);
 
-		// Hiển thị thông tin người chơi
+		// Chỉ hiển thị thông tin người chơi hiện tại
 		gi.setColor(Color.WHITE);
 		gi.drawString("Player: " + currentPlayer, 10, 20);
 		gi.drawString("Score: " + screens[0].getPlayerData().getScore(), 10, 40);
 		gi.drawString("Level: " + screens[0].getPlayerData().getLevel(), 10, 60);
 		gi.drawString("Lines: " + screens[0].getPlayerData().getLinesCleared(), 10, 80);
 
-		// Hiển thị thông tin đối thủ
-		gi.drawString("Opponent: " + opponentName, 410, 20);
-		gi.drawString("Score: " + opponentScore, 410, 40);
-		gi.drawString("Level: " + roomData.getPlayerData(opponentName).getLevel(), 410, 60);
-		gi.drawString("Lines: " + roomData.getPlayerData(opponentName).getLinesCleared(), 410, 80);
+		// Bỏ qua việc hiển thị thông tin đối thủ
+		// gi.drawString("Opponent: " + opponentName, 410, 20);
+		// gi.drawString("Score: " + opponentScore, 410, 40);
+		// gi.drawString("Level: " + roomData.getPlayerData(opponentName).getLevel(),
+		// 410, 60);
+		// gi.drawString("Lines: " +
+		// roomData.getPlayerData(opponentName).getLinesCleared(), 410, 80);
 	}
 
 	@Override
