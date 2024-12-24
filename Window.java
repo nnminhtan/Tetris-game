@@ -22,7 +22,7 @@ public class Window extends Frame {
     }
 
     private void connectToServer(String clientName) throws IOException {
-        Socket socket = new Socket("localhost", 8888);
+        Socket socket = new Socket("172.20.10.6", 8888);
         br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         pw = new PrintWriter(socket.getOutputStream(), true);
         System.out.println("Connected to server!");
@@ -49,6 +49,14 @@ public class Window extends Frame {
                     handlePlayerDisconnect(message);
                 } else if (message.startsWith("GRID_STATE:")) {
                     updateOpponentGrid(message);
+                } else if (message.startsWith("ROOM_INFO:")) {
+                    String[] parts = message.split(":");
+                    String roomName = parts[1];
+                    String opponentName = parts[2];
+                    int opponentScore = Integer.parseInt(parts[3]);
+                    if (gamePanel != null) {
+                        gamePanel.updateOpponentInfo(opponentName, opponentScore);
+                    }
                 }
             }
         } catch (IOException e) {
@@ -59,19 +67,19 @@ public class Window extends Frame {
     private void setupRoomSelectionUI() {
         setTitle("Tetris Battle - " + userName);
         setSize(400, 300);
-        
+
         roomPanel = new Panel();
         roomPanel.setLayout(new GridLayout(0, 1));
 
         Button createRoomBtn = new Button("Create Room");
         createRoomBtn.addActionListener(e -> createRoom());
-        
+
         Button joinRoomBtn = new Button("Join Room");
         joinRoomBtn.addActionListener(e -> joinRoom());
 
         roomPanel.add(createRoomBtn);
         roomPanel.add(joinRoomBtn);
-        
+
         add(roomPanel);
         setVisible(true);
     }
@@ -92,8 +100,8 @@ public class Window extends Frame {
 
     private void startGame() {
         remove(roomPanel);
-        String[] players = {userName, "Opponent"};
-        gamePanel = new TetrisPanel(2, players, pw);
+        String[] players = { userName, getOpponentName() }; // Lấy tên đối thủ thực tế
+        gamePanel = new TetrisPanel(2, players, pw, currentRoom); // Truyền tên phòng
         add(gamePanel);
         gamePanel.requestFocusInWindow();
         validate();
@@ -135,5 +143,16 @@ public class Window extends Frame {
             gamePanel.screens[1].setOpponentGrid(opponentGrid);
             gamePanel.repaint(); // Vẽ lại giao diện
         }
+    }
+
+    private String getOpponentName() {
+        if (currentRoom != null) {
+            String[] parts = currentRoom.split("_");
+            if (parts.length > 1) {
+                String roomOwner = parts[1];
+                return roomOwner.equals(userName) ? "Waiting..." : roomOwner;
+            }
+        }
+        return "Unknown";
     }
 }

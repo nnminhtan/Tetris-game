@@ -19,47 +19,47 @@ public class TetrisPanel extends Panel implements KeyListener {
 
 	// Variable representing the number of players
 	private int numOfPlayers;
-	
+
 	// the left and right portions of the panel
 	Tetris[] screens;
-	
+
 	private BufferedReader br;
 	private int[][] key;
 	private String[] playerNames;
 	private Tetris playerGame;
 	private Tetris opponentGame;
-	
+
 	private PrintWriter pw;
 
 	private int[][] opponentGrid = new int[22][10];
 
 	// Color array for Tetris pieces
 	private Color[] c = {
-		Color.BLACK, // 0 - empty
-		Color.BLUE,  // 1 - some block color
-		Color.RED,   // 2 - some block color
-		Color.GREEN, // 3 - some block color
-		Color.YELLOW,// 4 - some block color
-		Color.CYAN,  // 5 - some block color
-		Color.MAGENTA // 6 - some block color
-		// Add more colors as needed for your Tetris pieces
+			Color.BLACK, // 0 - empty
+			Color.BLUE, // 1 - some block color
+			Color.RED, // 2 - some block color
+			Color.GREEN, // 3 - some block color
+			Color.YELLOW, // 4 - some block color
+			Color.CYAN, // 5 - some block color
+			Color.MAGENTA // 6 - some block color
+			// Add more colors as needed for your Tetris pieces
 	};
 
-	// Add a new variable to store the opponent's score
-	private int opponentScore = 0;
+	private RoomData roomData;
 
-	TetrisPanel (int numOfPlayers, String[] playerNames, PrintWriter pw) {
+	TetrisPanel(int numOfPlayers, String[] playerNames, PrintWriter pw, String roomName) {
 		this.pw = pw;
 		this.numOfPlayers = numOfPlayers;
 		this.playerNames = playerNames;
 		key = new int[1][6]; // Only need controls for the player's game
 		screens = new Tetris[2]; // Two screens: player and opponent
-		
+
 		// Default key mappings
 		int[][] defaultKeys = {
-			{KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT, KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_SHIFT, KeyEvent.VK_SPACE}
+				{ KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT, KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_SHIFT,
+						KeyEvent.VK_SPACE }
 		};
-		
+
 		try {
 			br = new BufferedReader(new FileReader("INPUT"));
 			for (int j = 0; j < 6; j++)
@@ -68,71 +68,98 @@ public class TetrisPanel extends Panel implements KeyListener {
 			System.out.println("Using default key mappings");
 			System.arraycopy(defaultKeys[0], 0, key[0], 0, 6);
 		}
-		
+
 		addKeyListener(this);
 		setFocusable(true);
 		requestFocusInWindow();
-		
-		// Initialize player's game on the left side
+
+		// Initialize player's game
 		playerGame = new Tetris(0, 0, this, 0, playerNames[0]);
 		playerGame.setPrintWriter(pw);
 		screens[0] = playerGame;
-		
-		// ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
-		// Initialize opponent's game to get state from the other player
-		opponentGame = screens[0]; // Use the player's game state for the opponent
+
+		// Initialize opponent's game
+		opponentGame = new Tetris(400, 0, this, 1, playerNames[1]); // Sử dụng tên thật của đối thủ
 		screens[1] = opponentGame;
+
+		this.roomData = new RoomData(roomName); // Sử dụng tên phòng được truyền vào
+		this.roomData.addPlayer(playerNames[0]);
+		this.roomData.addPlayer(playerNames[1]);
 	}
-	public void paint (Graphics g) {
+
+	public void paint(Graphics g) {
 		dim = getSize();
 		bi = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_RGB);
 		gi = bi.getGraphics();
 		update(g);
 	}
-	public void update (Graphics g) {
+
+	public void update(Graphics g) {
 		gi.setColor(background);
 		gi.fillRect(0, 0, dim.width, dim.height);
-		
+
 		// Draw player's game
 		screens[0].displayGrid(gi);
 		screens[0].displayPieces(gi);
 		screens[0].displayUI(gi);
-		
+
 		// Draw opponent's game
 		screens[1].displayGrid(gi);
 		screens[1].displayPieces(gi);
 		screens[1].displayUI(gi);
-		
+
 		// Draw dividing line
 		gi.setColor(Color.WHITE);
 		gi.drawLine(400, 0, 400, dim.height);
-		
-		// Draw player names and scores
-		gi.drawString("Player: " + playerNames[0] + " Score: " + screens[0].getLinesCleared(), 10, 20);
-		gi.drawString("Opponent: " + playerNames[1] + " Score: " + opponentScore, 410, 20);
-		
+
+		updatePlayerDisplay(gi);
+
 		g.drawImage(bi, 0, 0, this);
 	}
 
+	private void updatePlayerDisplay(Graphics gi) {
+		String currentPlayer = playerNames[0];
+		String opponentName = roomData.getOpponentName(currentPlayer);
+		int opponentScore = roomData.getOpponentScore(currentPlayer);
+
+		// Hiển thị thông tin người chơi
+		gi.setColor(Color.WHITE);
+		gi.drawString("Player: " + currentPlayer, 10, 20);
+		gi.drawString("Score: " + screens[0].getPlayerData().getScore(), 10, 40);
+		gi.drawString("Level: " + screens[0].getPlayerData().getLevel(), 10, 60);
+		gi.drawString("Lines: " + screens[0].getPlayerData().getLinesCleared(), 10, 80);
+
+		// Hiển thị thông tin đối thủ
+		gi.drawString("Opponent: " + opponentName, 410, 20);
+		gi.drawString("Score: " + opponentScore, 410, 40);
+		gi.drawString("Level: " + roomData.getPlayerData(opponentName).getLevel(), 410, 60);
+		gi.drawString("Lines: " + roomData.getPlayerData(opponentName).getLinesCleared(), 410, 80);
+	}
+
 	@Override
-	public void keyTyped (KeyEvent e) {}
+	public void keyTyped(KeyEvent e) {
+	}
+
 	@Override
-	public void keyReleased (KeyEvent e) {
+	public void keyReleased(KeyEvent e) {
 		for (int i = 0; i < numOfPlayers; i++) {
 			for (int j = 0; j < 6; j++) {
 				if (e.getKeyCode() == key[i][j]) {
 					if (screens[i].curr == null)
 						break;
 					if (j == 3)
-						screens[i].delay = (screens[i].level >= 20 ? Tetris.GLOBAL_DELAY[19] : Tetris.GLOBAL_DELAY[screens[i].level]);
+						screens[i].delay = (screens[i].level >= 20 ? Tetris.GLOBAL_DELAY[19]
+								: Tetris.GLOBAL_DELAY[screens[i].level]);
 				}
 			}
 		}
 	}
+
 	@Override
-	public void keyPressed (KeyEvent e) {
+	public void keyPressed(KeyEvent e) {
 		// user input
-		// three cases that handle when the user adjusts the game states (ACTIVE, PAUSED, CLOSEd)
+		// three cases that handle when the user adjusts the game states (ACTIVE,
+		// PAUSED, CLOSEd)
 		if (e.getKeyCode() == KeyEvent.VK_P) {
 			boolean currentState = screens[0].isPaused;
 			for (int i = 0; i < numOfPlayers; i++)
@@ -165,9 +192,10 @@ public class TetrisPanel extends Panel implements KeyListener {
 							break;
 						case 2:
 							screens[i].rotateRight();
-							break;	
+							break;
 						case 3:
-							screens[i].delay = (screens[i].level >= 20 ? Tetris.GLOBAL_DELAY[19] : Tetris.GLOBAL_DELAY[screens[i].level])/8;
+							screens[i].delay = (screens[i].level >= 20 ? Tetris.GLOBAL_DELAY[19]
+									: Tetris.GLOBAL_DELAY[screens[i].level]) / 8;
 							break;
 
 						case 4:
@@ -179,7 +207,7 @@ public class TetrisPanel extends Panel implements KeyListener {
 							} else {
 								int temp = screens[i].holdId;
 								screens[i].holdId = screens[i].curr.id;
-								screens[i].curr = screens[i].p.getActive(temp-1);
+								screens[i].curr = screens[i].p.getActive(temp - 1);
 							}
 							screens[i].isHolding = true;
 							screens[i].time = 1 << 30;
@@ -187,7 +215,8 @@ public class TetrisPanel extends Panel implements KeyListener {
 						case 5:
 							screens[i].time = 1 << 30;
 							screens[i].lockTime = 1 << 30;
-							while(screens[i].movePiece(1, 0));
+							while (screens[i].movePiece(1, 0))
+								;
 							break;
 					}
 				}
@@ -196,22 +225,29 @@ public class TetrisPanel extends Panel implements KeyListener {
 		sendGameState();
 		repaint();
 	}
-	protected void setGameOver () {
+
+	protected void setGameOver() {
 		for (int i = 0; i < numOfPlayers; i++)
 			screens[i].isGameOver = true;
 	}
-	protected void sendGarbage (int id, int send) {
+
+	protected void sendGarbage(int id, int send) {
 		if (numOfPlayers == 1)
 			return;
-		int rand = (int)(Math.random()*(numOfPlayers-1));
+		int rand = (int) (Math.random() * (numOfPlayers - 1));
 		if (rand >= id)
 			rand++;
 		screens[rand].addGarbage(send);
-//		System.out.println("SENT " + send);
+		// System.out.println("SENT " + send);
 	}
-	
+
 	public void sendGameState() {
 		if (screens[0] != null) {
+			PlayerData playerData = screens[0].getPlayerData();
+			// Cập nhật điểm trong RoomData
+			roomData.updateScore(playerNames[0], playerData.getScore());
+			roomData.updatePlayerStats(playerNames[0], playerData.getLinesCleared(), playerData.getLevel());
+
 			StringBuilder state = new StringBuilder();
 			// Send grid state
 			for (int i = 0; i < 22; i++) {
@@ -227,19 +263,18 @@ public class TetrisPanel extends Panel implements KeyListener {
 				}
 				state.append(screens[0].curr.id).append(",");
 			} else {
-				state.append("N,"); // No current piece
+				state.append("N,");
 			}
-			
+
 			// Send score, level, and hold piece
-			state.append(screens[0].getLinesCleared()).append(",");
-			state.append(screens[0].getLevel()).append(",");
-			state.append(screens[0].holdId).append(",");
-			state.append(opponentScore); // Send opponent's score
-			
+			state.append(playerData.getLinesCleared()).append(",");
+			state.append(playerData.getLevel()).append(",");
+			state.append(screens[0].holdId);
+
 			pw.println("GAME_STATE:" + playerNames[0] + ":" + state.toString());
 		}
 	}
-	
+
 	public void updateOpponentState(String gameState) {
 		String[] parts = gameState.split(",");
 		int index = 0;
@@ -266,23 +301,18 @@ public class TetrisPanel extends Panel implements KeyListener {
 		}
 
 		// Update score and level
-		opponentScore = Integer.parseInt(parts[index++]); // Update opponent's score
 		screens[1].setLinesCleared(Integer.parseInt(parts[index++]));
 		screens[1].setLevel(Integer.parseInt(parts[index++]));
-		
 		screens[1].holdId = Integer.parseInt(parts[index]);
 
 		repaint();
-		checkForWinner(); // Check for a winner after updating the state
 	}
 
-	// Method to check for a winner
-	private void checkForWinner() {
-		if (screens[0].getLinesCleared() >= 100 || opponentScore >= 100) { // Example winning condition
-			String winner = screens[0].getLinesCleared() >= opponentScore ? playerNames[0] : playerNames[1];
-			System.out.println("Winner: " + winner);
-			// You can also display a message on the UI or handle game over logic here
-		}
+	public void updateOpponentInfo(String opponentName, int opponentScore) {
+		// Cập nhật thông tin của đối thủ
+		screens[1].setLinesCleared(opponentScore);
+		screens[1].setPlayerName(opponentName);
+		repaint();
 	}
 
 	public void setOpponentGrid(int[][] grid) {
