@@ -167,6 +167,9 @@ public class Tetris  {
 	private PrintWriter pw;
 	private String playerName;
 
+	// Add this line to declare the opponentGrid variable
+	private int[][] opponentGrid; // Declare the opponentGrid variable
+
 	public Tetris(int x, int y, TetrisPanel panel, int id, String playerName) {
 		this.panel = panel;
 		this.playerName = playerName;
@@ -285,7 +288,6 @@ public class Tetris  {
 	private int clearLines () {
 		int numCleared = 0;
 		while (true) {
-			// checking if there is a line that is full
 			int index = -1;
 			for (int j = 0; j < 22; j++) {
 				int cnt = 0;
@@ -297,9 +299,9 @@ public class Tetris  {
 					break;
 				}
 			}
-			if (index == -1)
-				break;
-			// removing the full lines one by one
+			if (index == -1) break;
+			
+			// Clear the line
 			int[][] temp = new int[22][10];
 			for (int i = 0; i < 22; i++)
 				for (int j = 0; j < 10; j++)
@@ -315,8 +317,45 @@ public class Tetris  {
 			linesCleared++;
 			numCleared++;
 		}
+		
+		// Handle battle mechanics
+		handleLineClears(numCleared);
 		return numCleared;
 	}
+
+	private void handleLineClears(int numCleared) {
+		if (numCleared > 0) {
+			combo++;
+			// Calculate garbage lines to send
+			int garbageLines = calculateGarbageLines(numCleared);
+			if (garbageLines > 0) {
+				sendGarbage(garbageLines);
+			}
+		} else {
+			combo = 0;
+		}
+	}
+
+	private int calculateGarbageLines(int numCleared) {
+		// Battle mechanics:
+		// Single line = 0 garbage
+		// Double line = 1 garbage
+		// Triple line = 2 garbage
+		// Tetris (4 lines) = 4 garbage
+		// Additional garbage for combos
+		int baseGarbage = 0;
+		switch (numCleared) {
+			case 2: baseGarbage = 1; break;
+			case 3: baseGarbage = 2; break;
+			case 4: baseGarbage = 4; break;
+		}
+		
+		// Add combo bonus (every 2 combos = 1 extra line)
+		int comboBonus = combo / 2;
+		
+		return baseGarbage + comboBonus;
+	}
+
 	public void restart () {
 		curr = null;
 		grid = new int[22][10];
@@ -422,39 +461,6 @@ public class Tetris  {
 		curr.hir += dr;
 		return true;
 	}
-	protected void addGarbageLines (int lines) {
-		for (int i = 0; i < 22; i++) {
-			for (int j = 0; j < 10; j++) {
-				if (grid[i][j] != 0 && i - lines < 0) {
-					isGameOver = true;
-					panel.setGameOver();
-				} else if (i - lines >= 0){
-					grid[i-lines][j] = grid[i][j];
-				}
-			}
-		}
-		for (int i = 21; i >= Math.max(0, 22-lines); i--) {
-			for (int j = 0; j < 10; j++)
-				grid[i][j] = 8;
-			grid[i][(int)(Math.random()*8)] = 0;
-		}
-		if (curr == null) {
-			panel.repaint();
-			return;
-		}
-		boolean valid = false;
-		while (!valid) {
-			valid = true;
-			for (Piece.Point block : curr.pos) {
-				if (block.r >= 0 && grid[block.r][block.c] != 0)
-					valid = false;
-			}
-			if (!valid)
-				for (int i = 0; i < 4; i++)
-					curr.pos[i].r--;
-		}
-		panel.repaint();
-	}
 
 	public int getGridValue(int row, int col) {
 		return grid[row][col];
@@ -492,5 +498,88 @@ public class Tetris  {
 		if (panel != null) {
 			panel.sendGameState(); // Call sendGameState through panel reference
 		}
+	}
+
+	// Modify the addGarbageLines method to handle incoming garbage
+	public void addGarbageLines(int lines) {
+		// Shift existing blocks up
+		for (int i = 0; i < 22-lines; i++) {
+			for (int j = 0; j < 10; j++) {
+				grid[i][j] = grid[i+lines][j];
+			}
+		}
+		
+		// Add garbage lines at the bottom
+		for (int i = 22-lines; i < 22; i++) {
+			for (int j = 0; j < 10; j++) {
+				grid[i][j] = 8; // Use gray color for garbage
+			}
+			// Add one hole in each garbage line
+			int hole = (int)(Math.random() * 10);
+			grid[i][hole] = 0;
+		}
+		
+		// Check if garbage causes game over
+		for (int i = 0; i < 2; i++) {
+			for (int j = 0; j < 10; j++) {
+				if (grid[i][j] != 0) {
+					isGameOver = true;
+					panel.setGameOver();
+					break;
+				}
+			}
+		}
+		
+		// Update current piece position if necessary
+		if (curr != null) {
+			boolean valid = true;
+			for (Piece.Point block : curr.pos) {
+				if (block.r >= 0 && grid[block.r][block.c] != 0) {
+					valid = false;
+					break;
+				}
+			}
+			if (!valid) {
+				// Try to push the piece up
+				while (!valid && curr.lor > 0) {
+					for (Piece.Point block : curr.pos) {
+						block.r--;
+					}
+					curr.lor--;
+					curr.hir--;
+					
+					valid = true;
+					for (Piece.Point block : curr.pos) {
+						if (block.r >= 0 && grid[block.r][block.c] != 0) {
+							valid = false;
+							break;
+						}
+					}
+				}
+				if (!valid) {
+					isGameOver = true;
+					panel.setGameOver();
+				}
+			}
+		}
+	}
+
+	public void sendGridState() {
+		if (pw != null) {
+			StringBuilder state = new StringBuilder("GRID_STATE:");
+			for (int i = 0; i < 22; i++) {
+				for (int j = 0; j < 10; j++) {
+					state.append(grid[i][j]).append(",");
+				}
+			}
+			pw.println(state.toString());
+		}
+	}
+
+	public void setOpponentGrid(int[][] opponentGrid) {
+		this.opponentGrid = opponentGrid;
+		// Update the UI to reflect the opponent's grid
+		panel.updateOpponentGrid(opponentGrid); // Assuming you have a method in TetrisPanel to handle this
+		// Additional logic to update the game state can be added here if necessary
 	}
 }

@@ -25,17 +25,30 @@ public class TetrisPanel extends Panel implements KeyListener {
 	
 	private BufferedReader br;
 	private int[][] key;
-	private String playerName;
-	private String opponentName;
+	private String[] playerNames;
 	private Tetris playerGame;
 	private Tetris opponentGame;
 	
 	private PrintWriter pw;
-	
-	TetrisPanel (int numOfPlayers, String playerName, PrintWriter pw) {
+
+	private int[][] opponentGrid = new int[22][10];
+
+	// Color array for Tetris pieces
+	private Color[] c = {
+		Color.BLACK, // 0 - empty
+		Color.BLUE,  // 1 - some block color
+		Color.RED,   // 2 - some block color
+		Color.GREEN, // 3 - some block color
+		Color.YELLOW,// 4 - some block color
+		Color.CYAN,  // 5 - some block color
+		Color.MAGENTA // 6 - some block color
+		// Add more colors as needed for your Tetris pieces
+	};
+
+	TetrisPanel (int numOfPlayers, String[] playerNames, PrintWriter pw) {
 		this.pw = pw;
 		this.numOfPlayers = numOfPlayers;
-		this.playerName = playerName;
+		this.playerNames = playerNames;
 		key = new int[1][6]; // Only need controls for the player's game
 		screens = new Tetris[2]; // Two screens: player and opponent
 		
@@ -58,12 +71,13 @@ public class TetrisPanel extends Panel implements KeyListener {
 		requestFocusInWindow();
 		
 		// Initialize player's game on the left side
-		playerGame = new Tetris(0, 0, this, 0, playerName);
+		playerGame = new Tetris(0, 0, this, 0, playerNames[0]);
 		playerGame.setPrintWriter(pw);
 		screens[0] = playerGame;
 		
-		// Initialize opponent's game on the right side
-		opponentGame = new Tetris(400, 0, this, 1, "Opponent");
+		// ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
+		// Initialize opponent's game to get state from the other player
+		opponentGame = screens[0]; // Use the player's game state for the opponent
 		screens[1] = opponentGame;
 	}
 	public void paint (Graphics g) {
@@ -91,8 +105,8 @@ public class TetrisPanel extends Panel implements KeyListener {
 		gi.drawLine(400, 0, 400, dim.height);
 		
 		// Draw player names
-		gi.drawString("Player: " + playerName, 10, 20);
-		gi.drawString("Opponent", 410, 20);
+		gi.drawString("Player: " + playerNames[0], 10, 20);
+		gi.drawString("Opponent: " + playerNames[1], 410, 20);
 		
 		g.drawImage(bi, 0, 0, this);
 	}
@@ -218,21 +232,21 @@ public class TetrisPanel extends Panel implements KeyListener {
 			state.append(screens[0].getLevel()).append(",");
 			state.append(screens[0].holdId);
 			
-			pw.println("GAME_STATE:" + playerName + ":" + state.toString());
+			pw.println("GAME_STATE:" + playerNames[0] + ":" + state.toString());
 		}
 	}
 	
 	public void updateOpponentState(String gameState) {
 		String[] parts = gameState.split(",");
 		int index = 0;
-		
+
 		// Update grid
 		for (int i = 0; i < 22; i++) {
 			for (int j = 0; j < 10; j++) {
 				screens[1].setGridValue(i, j, Integer.parseInt(parts[index++]));
 			}
 		}
-		
+
 		// Update current piece
 		String pieceState = parts[index++];
 		if (pieceState.equals("P")) {
@@ -246,12 +260,32 @@ public class TetrisPanel extends Panel implements KeyListener {
 			screens[1].curr = screens[1].p.getActive(pieceId - 1);
 			screens[1].curr.pos = newPos;
 		}
-		
+
 		// Update score and level
 		screens[1].setLinesCleared(Integer.parseInt(parts[index++]));
 		screens[1].setLevel(Integer.parseInt(parts[index++]));
 		screens[1].holdId = Integer.parseInt(parts[index]);
-		
+
 		repaint();
+	}
+
+	public void setOpponentGrid(int[][] grid) {
+		this.opponentGrid = grid;
+	}
+
+	public void displayOpponentGrid(Graphics gi) {
+		for (int i = 2; i < 22; i++) {
+			for (int j = 0; j < 10; j++) {
+				gi.setColor(c[opponentGrid[i][j]]);
+				gi.fillRect(400 + j * 25 + 10, i * 25, 24, 24); // Vẽ lưới đối thủ bên phải
+			}
+		}
+	}
+
+	public void updateOpponentGrid(int[][] opponentGrid) {
+		// Logic to update the UI with the opponent's grid
+		// This could involve repainting the panel or updating specific components
+		this.opponentGrid = opponentGrid; // Assuming you have a variable to store the opponent's grid
+		repaint(); // Call repaint to refresh the display
 	}
 }

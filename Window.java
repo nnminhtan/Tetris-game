@@ -1,87 +1,139 @@
 import java.awt.*;
 import java.io.*;
 import java.net.Socket;
-import javax.swing.JFrame;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.SwingUtilities;
 
 public class Window extends Frame {
     private static final long serialVersionUID = -1324363758675184283L;
     private BufferedReader br;
     private PrintWriter pw;
-    private int numOfPlayers;
     private String userName;
+    private TetrisPanel gamePanel;
+    private Panel roomPanel;
+    private List<String> roomPlayers = new ArrayList<>();
+    private String currentRoom;
 
     public Window(String clientName) throws IOException {
+        this.userName = clientName;
         connectToServer(clientName);
-        userName = clientName;
         setupRoomSelectionUI();
     }
 
     private void connectToServer(String clientName) throws IOException {
-        System.out.println("Connecting to server...");
-        Socket socket = new Socket("192.168.0.102", 8888);
+        Socket socket = new Socket("localhost", 8888);
         br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         pw = new PrintWriter(socket.getOutputStream(), true);
         System.out.println("Connected to server!");
 
         pw.println(clientName);
 
-        // Create final reference for TetrisPanel
-        final TetrisPanel[] gamePanelRef = new TetrisPanel[1];
+        // Start listening for server messages
+        new Thread(this::handleServerMessages).start();
+    }
 
-        new Thread(() -> {
-            try {
-                String message;
-                while ((message = br.readLine()) != null) {
-                    if (message.startsWith("START_MATCH:")) {
-                        String[] parts = message.split(":");
-                        numOfPlayers = Integer.parseInt(parts[1]);
-                        String opponentName = parts[2];
-                        SwingUtilities.invokeLater(() -> {
-                            JFrame tetrisFrame = new JFrame("Tetris Game - " + clientName);
-                            TetrisPanel tetrisPanel = new TetrisPanel(numOfPlayers, clientName, pw);
-                            gamePanelRef[0] = tetrisPanel;
-                            tetrisFrame.add(tetrisPanel);
-                            tetrisFrame.setSize(800, 600);
-                            tetrisFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                            tetrisFrame.setVisible(true);
-                            tetrisPanel.requestFocusInWindow();
-                        });
-                    } else if (message.startsWith("OPPONENT_STATE:")) {
-                        final String gameState = message.substring("OPPONENT_STATE:".length());
-                        if (gamePanelRef[0] != null) {
-                            SwingUtilities.invokeLater(() -> {
-                                gamePanelRef[0].updateOpponentState(gameState);
-                            });
-                        }
-                    }
+    private void handleServerMessages() {
+        try {
+            String message;
+            while ((message = br.readLine()) != null) {
+                if (message.startsWith("ROOM_CREATED:")) {
+                    System.out.println("Room created: " + message.split(":")[1]);
+                } else if (message.startsWith("JOINED_ROOM:")) {
+                    System.out.println("Joined room: " + message.split(":")[1]);
+                } else if (message.startsWith("START_GAME")) {
+                    startGame();
+                } else if (message.startsWith("ADD_GARBAGE:")) {
+                    handleGarbageLines(message);
+                } else if (message.startsWith("PLAYER_DISCONNECTED:")) {
+                    handlePlayerDisconnect(message);
+                } else if (message.startsWith("GRID_STATE:")) {
+                    updateOpponentGrid(message);
                 }
-            } catch (IOException e) {
-                System.out.println("Disconnected from server.");
             }
-        }).start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupRoomSelectionUI() {
-        setTitle("Tetris Room Selector");
+        setTitle("Tetris Battle - " + userName);
         setSize(400, 300);
-        setLayout(new GridLayout(3, 1));
+        
+        roomPanel = new Panel();
+        roomPanel.setLayout(new GridLayout(0, 1));
 
-        Label label = new Label("Enter a command: CREATE <room>, JOIN <room>, or LIST");
-        add(label);
+        Button createRoomBtn = new Button("Create Room");
+        createRoomBtn.addActionListener(e -> createRoom());
+        
+        Button joinRoomBtn = new Button("Join Room");
+        joinRoomBtn.addActionListener(e -> joinRoom());
 
-        TextField commandField = new TextField();
-        add(commandField);
-
-        Button sendButton = new Button("Send");
-        add(sendButton);
-
-        sendButton.addActionListener(e -> {
-            String command = commandField.getText();
-            pw.println(command); // Send the command to the server
-            commandField.setText(""); // Clear the input field
-        });
-
+        roomPanel.add(createRoomBtn);
+        roomPanel.add(joinRoomBtn);
+        
+        add(roomPanel);
         setVisible(true);
+    }
+
+    private void createRoom() {
+        String roomName = "Room_" + userName + "_" + System.currentTimeMillis();
+        pw.println("CREATE " + roomName);
+        currentRoom = roomName;
+    }
+
+    private void joinRoom() {
+        String roomName = javax.swing.JOptionPane.showInputDialog("Enter room name");
+        if (roomName != null && !roomName.trim().isEmpty()) {
+            pw.println("JOIN " + roomName);
+            currentRoom = roomName;
+        }
+    }
+
+    private void startGame() {
+        remove(roomPanel);
+        String[] players = {userName, "Opponent"};
+        gamePanel = new TetrisPanel(2, players, pw);
+        add(gamePanel);
+        gamePanel.requestFocusInWindow();
+        validate();
+        repaint();
+    }
+
+    private void handleGarbageLines(String message) {
+        if (gamePanel != null) {
+            String[] parts = message.split(":");
+            String sender = parts[1];
+            int lines = Integer.parseInt(parts[2]);
+            if (!sender.equals(userName)) {
+                gamePanel.screens[0].addGarbageLines(lines);
+            }
+        }
+    }
+
+    private void handlePlayerDisconnect(String message) {
+        String disconnectedPlayer = message.split(":")[1];
+        if (gamePanel != null) {
+            SwingUtilities.invokeLater(() -> {
+                gamePanel.screens[1].isGameOver = true;
+                gamePanel.repaint();
+            });
+        }
+    }
+
+    private void updateOpponentGrid(String message) {
+        String[] parts = message.split(":");
+        if (parts.length > 1) {
+            String[] gridValues = parts[1].split(",");
+            int[][] opponentGrid = new int[22][10];
+            for (int i = 0; i < 22; i++) {
+                for (int j = 0; j < 10; j++) {
+                    opponentGrid[i][j] = Integer.parseInt(gridValues[i * 10 + j]);
+                }
+            }
+            // Cập nhật giao diện người dùng với lưới của đối thủ
+            gamePanel.screens[1].setOpponentGrid(opponentGrid);
+            gamePanel.repaint(); // Vẽ lại giao diện
+        }
     }
 }
