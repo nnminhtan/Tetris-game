@@ -312,8 +312,7 @@ public class Tetris {
 					break;
 				}
 			}
-			if (index == -1)
-				break;
+			if (index == -1) break;
 
 			// Clear the line
 			int[][] temp = new int[22][10];
@@ -330,10 +329,16 @@ public class Tetris {
 			}
 			linesCleared++;
 			numCleared++;
+			
+			// Update player data and notify opponent
+			if (playerData != null) {
+				playerData.setLinesCleared(linesCleared);
+				playerData.setScore(linesCleared * 100);
+				if (pw != null) {
+					pw.println("LINES_CLEARED:" + playerName + ":" + linesCleared + ":" + playerData.getScore());
+				}
+			}
 		}
-
-		// Handle battle mechanics
-		handleLineClears(numCleared);
 		return numCleared;
 	}
 

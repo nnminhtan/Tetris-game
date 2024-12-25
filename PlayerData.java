@@ -3,10 +3,16 @@ public class PlayerData {
     private int score;
     private int linesCleared;
     private int level;
+    private boolean isGameOver;
+    private int wins;
 
     public PlayerData(String name) {
         this.name = name;
         this.score = 0;
+        this.linesCleared = 0;
+        this.level = 0;
+        this.isGameOver = false;
+        this.wins = 0;
     }
 
     public String getName() {
@@ -36,6 +42,22 @@ public class PlayerData {
 
     public int getLevel() {
         return level;
+    }
+
+    public boolean isGameOver() {
+        return isGameOver;
+    }
+
+    public void setGameOver(boolean gameOver) {
+        this.isGameOver = gameOver;
+    }
+
+    public int getWins() {
+        return wins;
+    }
+
+    public void incrementWins() {
+        this.wins++;
     }
 
     @Override

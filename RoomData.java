@@ -3,6 +3,7 @@ public class RoomData {
     private PlayerData player1;
     private PlayerData player2;
     private boolean isGameStarted;
+    private boolean isMatchInProgress;
 
     public RoomData(String roomId) {
         this.roomId = roomId;
@@ -105,5 +106,31 @@ public class RoomData {
 
     public boolean isFull() {
         return player1 != null && player2 != null;
+    }
+
+    public void startMatch() {
+        this.isGameStarted = true;
+        this.isMatchInProgress = true;
+    }
+
+    public void endMatch(String winnerName) {
+        this.isMatchInProgress = false;
+        PlayerData winner = getPlayerData(winnerName);
+        if (winner != null) {
+            winner.incrementWins();
+        }
+    }
+
+    public boolean isMatchInProgress() {
+        return isMatchInProgress;
+    }
+
+    public void checkGameOver() {
+        if (player1 != null && player2 != null) {
+            if (player1.isGameOver() || player2.isGameOver()) {
+                String winnerName = player1.isGameOver() ? player2.getName() : player1.getName();
+                endMatch(winnerName);
+            }
+        }
     }
 }

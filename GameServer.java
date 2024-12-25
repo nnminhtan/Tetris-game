@@ -149,6 +149,8 @@ public class GameServer {
                         handleGameState(playerName, gameState);
                     } else if (message.startsWith("GARBAGE:")) {
                         handleGarbageLines(message);
+                    } else if (message.startsWith("LINES_CLEARED:")) {
+                        handleLinesClearedMessage(message);
                     }
                 }
             } catch (IOException e) {
@@ -216,6 +218,19 @@ public class GameServer {
                 String sender = parts[1];
                 int lines = Integer.parseInt(parts[2]);
                 broadcastToRoom(currentRoom, "ADD_GARBAGE:" + sender + ":" + lines, true);
+            }
+        }
+
+        private void handleLinesClearedMessage(String message) {
+            String[] parts = message.split(":");
+            String playerName = parts[1];
+            int linesCleared = Integer.parseInt(parts[2]);
+            int score = Integer.parseInt(parts[3]);
+            
+            RoomData roomData = rooms.get(currentRoom);
+            if (roomData != null) {
+                roomData.updatePlayerStats(playerName, linesCleared, score);
+                broadcastToRoom(currentRoom, message, false);
             }
         }
 

@@ -79,7 +79,7 @@ public class TetrisPanel extends Panel implements KeyListener {
 		screens[0] = playerGame;
 
 		// Initialize opponent's game
-		opponentGame = new Tetris(400, 0, this, 1, playerNames[1]); // Sử dụng tên th���t của đối thủ
+		opponentGame = new Tetris(400, 0, this, 1, playerNames[1]); // Sử dụng tên thực của đối thủ
 		screens[1] = opponentGame;
 
 		this.roomData = new RoomData(roomName); // Sử dụng tên phòng được truyền vào
@@ -333,5 +333,21 @@ public class TetrisPanel extends Panel implements KeyListener {
 		// This could involve repainting the panel or updating specific components
 		this.opponentGrid = opponentGrid; // Assuming you have a variable to store the opponent's grid
 		repaint(); // Call repaint to refresh the display
+	}
+
+	public void checkGameOver() {
+		if (screens[0].isGameOver) {
+			String winner = playerNames[1]; // Opponent wins
+			pw.println("GAME_OVER:" + winner);
+			displayGameOverMessage(winner);
+		}
+	}
+
+	private void displayGameOverMessage(String winner) {
+		Graphics g = getGraphics();
+		g.setColor(Color.WHITE);
+		g.setFont(new Font("Arial", Font.BOLD, 24));
+		String message = winner + " wins!";
+		g.drawString(message, getWidth()/2 - 50, getHeight()/2);
 	}
 }
