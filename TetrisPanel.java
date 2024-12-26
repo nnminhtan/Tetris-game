@@ -79,12 +79,39 @@ public class TetrisPanel extends Panel implements KeyListener {
 		screens[0] = playerGame;
 
 		// Initialize opponent's game
-		opponentGame = new Tetris(400, 0, this, 1, playerNames[1]); // Sử dụng tên thực của đối thủ
+		opponentGame = new Tetris(400, 0, this, 1, playerNames[1]); // Sử dụng tên thc của đối thủ
 		screens[1] = opponentGame;
 
 		this.roomData = new RoomData(roomName); // Sử dụng tên phòng được truyền vào
 		this.roomData.addPlayer(playerNames[0]);
 		this.roomData.addPlayer(playerNames[1]);
+	}
+
+	public void sendGameState() {
+		if (screens[0] != null) {
+			PlayerData playerData = screens[0].getPlayerData();
+			int linesCleared = screens[0].getLinesCleared();
+			int score = linesCleared * 100;
+
+			// Gửi điểm số qua mạng cho đối thủ
+			String scoreMessage = String.format("SCORE_UPDATE:%s:%d:%d:%d",
+					playerNames[0], // tên người gửi
+					score, // điểm số
+					linesCleared, // số dòng đã xóa
+					playerData.getLevel() // level
+			);
+			pw.println(scoreMessage);
+			System.out.println("Sending score to opponent: " + score);
+
+			// Gửi trạng thái grid
+			StringBuilder gridState = new StringBuilder("GRID_STATE:");
+			for (int i = 0; i < 22; i++) {
+				for (int j = 0; j < 10; j++) {
+					gridState.append(screens[0].getGridValue(i, j)).append(",");
+				}
+			}
+			pw.println(gridState.toString());
+		}
 	}
 
 	public void paint(Graphics g) {
@@ -118,14 +145,14 @@ public class TetrisPanel extends Panel implements KeyListener {
 	}
 
 	private void updatePlayerDisplay(Graphics gi) {
-		String currentPlayer = playerNames[0];
-
-		// Chỉ hiển thị thông tin người chơi hiện tại
-		gi.setColor(Color.WHITE);
-		gi.drawString("Player: " + currentPlayer, 10, 20);
-		gi.drawString("Score: " + screens[0].getPlayerData().getScore(), 10, 40);
-		gi.drawString("Level: " + screens[0].getPlayerData().getLevel(), 10, 60);
-		gi.drawString("Lines: " + screens[0].getPlayerData().getLinesCleared(), 10, 80);
+		// Xóa hết các thông tin hiển thị cũ
+		// String currentPlayer = playerNames[0];
+		// gi.setColor(Color.WHITE);
+		// gi.drawString("Player: " + currentPlayer, 10, 20);
+		// gi.drawString("Score: " + screens[0].getPlayerData().getScore(), 10, 40);
+		// gi.drawString("Level: " + screens[0].getPlayerData().getLevel(), 10, 60);
+		// gi.drawString("Lines: " + screens[0].getPlayerData().getLinesCleared(), 10,
+		// 80);
 
 		// Bỏ qua việc hiển thị thông tin đối thủ
 		// gi.drawString("Opponent: " + opponentName, 410, 20);
@@ -241,40 +268,6 @@ public class TetrisPanel extends Panel implements KeyListener {
 		// System.out.println("SENT " + send);
 	}
 
-	public void sendGameState() {
-		if (screens[0] != null) {
-			PlayerData playerData = screens[0].getPlayerData();
-			// Cập nhật điểm trong RoomData
-			roomData.updateScore(playerNames[0], playerData.getScore());
-			roomData.updatePlayerStats(playerNames[0], playerData.getLinesCleared(), playerData.getLevel());
-
-			StringBuilder state = new StringBuilder();
-			// Send grid state
-			for (int i = 0; i < 22; i++) {
-				for (int j = 0; j < 10; j++) {
-					state.append(screens[0].getGridValue(i, j)).append(",");
-				}
-			}
-			// Send current piece state
-			if (screens[0].curr != null) {
-				state.append("P,");
-				for (Piece.Point p : screens[0].curr.pos) {
-					state.append(p.r).append(",").append(p.c).append(",");
-				}
-				state.append(screens[0].curr.id).append(",");
-			} else {
-				state.append("N,");
-			}
-
-			// Send score, level, and hold piece
-			state.append(playerData.getLinesCleared()).append(",");
-			state.append(playerData.getLevel()).append(",");
-			state.append(screens[0].holdId);
-
-			pw.println("GAME_STATE:" + playerNames[0] + ":" + state.toString());
-		}
-	}
-
 	public void updateOpponentState(String gameState) {
 		String[] parts = gameState.split(",");
 		int index = 0;
@@ -308,11 +301,21 @@ public class TetrisPanel extends Panel implements KeyListener {
 		repaint();
 	}
 
-	public void updateOpponentInfo(String opponentName, int opponentScore) {
-		// Cập nhật thông tin của đối thủ
-		screens[1].setLinesCleared(opponentScore);
-		screens[1].setPlayerName(opponentName);
-		repaint();
+	public void updateOpponentInfo(String opponentName, int score, int lines, int level) {
+		if (screens[0] != null) {
+			// Cập nhật điểm của đối thủ cho người chơi hiện tại
+			screens[0].getPlayerData().setOpponentScore(score);
+		}
+
+		// Cập nhật thông tin cho màn hình đối thủ
+		if (screens[1] != null) {
+			screens[1].setLinesCleared(lines);
+			screens[1].setLevel(level);
+			screens[1].setPlayerName(opponentName);
+			screens[1].getPlayerData().setScore(score);
+		}
+
+		repaint(); // Vẽ lại giao diện
 	}
 
 	public void setOpponentGrid(int[][] grid) {

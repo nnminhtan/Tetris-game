@@ -22,7 +22,7 @@ public class Window extends Frame {
     }
 
     private void connectToServer(String clientName) throws IOException {
-        Socket socket = new Socket("localhost", 8888);
+        Socket socket = new Socket("10.13.149.104", 8888);
         br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         pw = new PrintWriter(socket.getOutputStream(), true);
         System.out.println("Connected to server!");
@@ -54,8 +54,21 @@ public class Window extends Frame {
                     String roomName = parts[1];
                     String opponentName = parts[2];
                     int opponentScore = Integer.parseInt(parts[3]);
+                    int opponentLines = Integer.parseInt(parts[4]);
+                    int opponentLevel = Integer.parseInt(parts[5]);
                     if (gamePanel != null) {
-                        gamePanel.updateOpponentInfo(opponentName, opponentScore);
+                        gamePanel.updateOpponentInfo(opponentName, opponentScore, opponentLines, opponentLevel);
+                    }
+                } else if (message.startsWith("SCORE_UPDATE:")) {
+                    String[] parts = message.split(":");
+                    String senderName = parts[1];
+                    int score = Integer.parseInt(parts[2]);
+                    int lines = Integer.parseInt(parts[3]);
+                    int level = Integer.parseInt(parts[4]);
+
+                    if (gamePanel != null && !senderName.equals(userName)) {
+                        gamePanel.updateOpponentInfo(senderName, score, lines, level);
+                        System.out.println("Received score from " + senderName + ": " + score);
                     }
                 }
             }

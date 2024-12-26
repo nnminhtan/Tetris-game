@@ -3,16 +3,16 @@ public class PlayerData {
     private int score;
     private int linesCleared;
     private int level;
-    private boolean isGameOver;
-    private int wins;
+    private int opponentScore = 0;
 
     public PlayerData(String name) {
         this.name = name;
         this.score = 0;
         this.linesCleared = 0;
         this.level = 0;
-        this.isGameOver = false;
-        this.wins = 0;
+        // this.isGameOver = false;
+        // this.wins = 0;
+
     }
 
     public String getName() {
@@ -25,7 +25,7 @@ public class PlayerData {
 
     public void setScore(int score) {
         this.score = score;
-        System.out.println(name + " score updated to: " + score);
+        System.out.println("Updated score for " + name + ": " + score);
     }
 
     public void setLinesCleared(int lines) {
@@ -44,20 +44,12 @@ public class PlayerData {
         return level;
     }
 
-    public boolean isGameOver() {
-        return isGameOver;
+    public void setOpponentScore(int score) {
+        this.opponentScore = score;
     }
 
-    public void setGameOver(boolean gameOver) {
-        this.isGameOver = gameOver;
-    }
-
-    public int getWins() {
-        return wins;
-    }
-
-    public void incrementWins() {
-        this.wins++;
+    public int getOpponentScore() {
+        return opponentScore;
     }
 
     @Override

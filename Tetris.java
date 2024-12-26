@@ -259,10 +259,18 @@ public class Tetris {
 		gi.setColor(UIColor);
 		gi.drawString("LINES CLEARED: " + linesCleared, panelC + 10, panelR + 10);
 		gi.drawString("CURRENT LEVEL: " + level, panelC + 10, panelR + 20);
+		gi.drawString("SCORE: " + (linesCleared * 100), panelC + 10, panelR + 30);
+
+		// Hiển thị điểm của đối thủ
+		if (playerData != null) {
+			int opponentScore = playerData.getOpponentScore();
+			gi.drawString("OPPONENT SCORE: " + opponentScore, panelC + 10, panelR + 40);
+		}
+
 		if (isPaused)
-			gi.drawString("PAUSED", panelC + 10, 30);
+			gi.drawString("PAUSED", panelC + 10, 50);
 		if (isGameOver)
-			gi.drawString("GAMEOVER -- Q FOR QUIT; R FOR RESTART", panelC + 10, panelR + 40);
+			gi.drawString("GAMEOVER -- Q FOR QUIT; R FOR RESTART", panelC + 10, panelR + 60);
 		gi.drawString("HOLD", panelC + 300, panelR + 300);
 		gi.drawString("NEXT", panelC + 300, panelR + 50);
 		for (int k = 0; k < 5; k++) {

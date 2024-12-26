@@ -27,12 +27,12 @@ public class GameServer {
             }
         }
 
-        public void updatePlayerStats(String playerName, int linesCleared, int level) {
+        public void updatePlayerStats(String playerName, int linesCleared, int level, int score) {
             PlayerData player = getPlayerData(playerName);
             if (player != null) {
                 player.setLinesCleared(linesCleared);
                 player.setLevel(level);
-                player.setScore(linesCleared * 100);
+                player.setScore(score);
                 printRoomStatus();
             }
         }
@@ -46,14 +46,38 @@ public class GameServer {
             return null;
         }
 
+        public PlayerData getOpponentData(String playerName) {
+            if (player1 != null && player1.getName().equals(playerName)) {
+                return player2;
+            } else if (player2 != null && player2.getName().equals(playerName)) {
+                return player1;
+            }
+            return null;
+        }
+
         public void printRoomStatus() {
-            System.out.println(roomId + ": " +
-                    (player1 != null ? "Player 1 (" + player1.getName() + ") - score: " + player1.getScore()
-                            : "Waiting for Player 1")
-                    +
-                    "\n" + roomId + ": " +
-                    (player2 != null ? "Player 2 (" + player2.getName() + ") - score: " + player2.getScore()
-                            : "Waiting for Player 2"));
+            // System.out.println("\n" + roomId + " Status:");
+            // System.out.println("------------------------");
+            // if (player1 != null) {
+            // System.out.println("Player: " + player1.getName());
+            // System.out.println("- Lines cleared: " + player1.getLinesCleared());
+            // System.out.println("- Score: " + (player1.getLinesCleared() * 100));
+            // System.out.println("- Level: " + player1.getLevel());
+            // } else {
+            // System.out.println("Waiting for Player 1");
+            // }
+
+            // System.out.println("------------------------");
+
+            // if (player2 != null) {
+            // System.out.println("Player: " + player2.getName());
+            // System.out.println("- Lines cleared: " + player2.getLinesCleared());
+            // System.out.println("- Score: " + (player2.getLinesCleared() * 100));
+            // System.out.println("- Level: " + player2.getLevel());
+            // } else {
+            // System.out.println("Waiting for Player 2");
+            // }
+            // System.out.println("------------------------\n");
         }
 
         public boolean isFull() {
@@ -149,8 +173,8 @@ public class GameServer {
                         handleGameState(playerName, gameState);
                     } else if (message.startsWith("GARBAGE:")) {
                         handleGarbageLines(message);
-                    } else if (message.startsWith("LINES_CLEARED:")) {
-                        handleLinesClearedMessage(message);
+                    } else if (message.startsWith("SCORE_UPDATE:")) {
+                        handleMessage(message);
                     }
                 }
             } catch (IOException e) {
@@ -166,6 +190,7 @@ public class GameServer {
             rooms.put(roomName, roomData);
             currentRoom = roomName;
             out.println("ROOM_CREATED:" + roomName);
+            System.out.println("Room created: " + roomName + " by player: " + clientName);
             broadcastRoomInfo(roomName);
         }
 
@@ -175,22 +200,38 @@ public class GameServer {
                 roomData.addPlayer(clientName);
                 currentRoom = roomName;
                 out.println("JOINED_ROOM:" + roomName);
+                System.out.println("Player " + clientName + " joined room: " + roomName);
                 broadcastRoomInfo(roomName);
                 if (roomData.isFull()) {
                     roomData.setGameStarted(true);
+                    System.out.println("Room " + roomName + " is full, starting game...");
+                    System.out.println("Players in room: " + roomData.getPlayers());
                     broadcastToRoom(roomName, "START_GAME", false);
                 }
             } else {
                 out.println("ROOM_FULL");
+                System.out.println("Failed to join room " + roomName + " - Room is full or doesn't exist");
             }
         }
 
         private void broadcastRoomInfo(String roomName) {
             RoomData roomData = rooms.get(roomName);
-            String message = "ROOM_INFO:" + roomName + ":" +
-                    roomData.getOpponentName(clientName) + ":" +
-                    roomData.getOpponentScore(clientName);
-            broadcastToRoom(roomName, message, false);
+            if (roomData != null) {
+                for (String playerName : roomData.getPlayers()) {
+                    PlayerData opponent = roomData.getOpponentData(playerName);
+                    if (opponent != null) {
+                        String message = "ROOM_INFO:" + roomName + ":" +
+                                opponent.getName() + ":" +
+                                opponent.getScore() + ":" +
+                                opponent.getLinesCleared() + ":" +
+                                opponent.getLevel();
+                        ClientHandler client = getClientByName(playerName);
+                        if (client != null) {
+                            client.out.println(message);
+                        }
+                    }
+                }
+            }
         }
 
         private void checkRoomStatus(String roomName) {
@@ -207,8 +248,33 @@ public class GameServer {
                 String[] parts = gameState.split(",");
                 int linesCleared = Integer.parseInt(parts[parts.length - 3]);
                 int level = Integer.parseInt(parts[parts.length - 2]);
-                roomData.updatePlayerStats(playerName, linesCleared, level);
-                broadcastToRoom(currentRoom, "GAME_STATE:" + playerName + ":" + gameState, false);
+                int score = linesCleared * 100;
+
+                roomData.updatePlayerStats(playerName, linesCleared, level, score);
+
+                // Gửi điểm số cho tất cả người chơi trong phòng
+                String scoreUpdate = String.format("SCORE_UPDATE:%s:%d:%d:%d",
+                        playerName, score, linesCleared, level);
+                broadcastToRoom(currentRoom, scoreUpdate, false);
+
+                System.out.println("Broadcasting score update in room " + currentRoom);
+                System.out.println("From player: " + playerName);
+                System.out.println("Score: " + score + ", Lines: " + linesCleared);
+            }
+        }
+
+        private int calculateScore(int linesCleared) {
+            switch (linesCleared) {
+                case 1:
+                    return 100;
+                case 2:
+                    return 300;
+                case 3:
+                    return 500;
+                case 4:
+                    return 800;
+                default:
+                    return linesCleared * 100;
             }
         }
 
@@ -218,19 +284,6 @@ public class GameServer {
                 String sender = parts[1];
                 int lines = Integer.parseInt(parts[2]);
                 broadcastToRoom(currentRoom, "ADD_GARBAGE:" + sender + ":" + lines, true);
-            }
-        }
-
-        private void handleLinesClearedMessage(String message) {
-            String[] parts = message.split(":");
-            String playerName = parts[1];
-            int linesCleared = Integer.parseInt(parts[2]);
-            int score = Integer.parseInt(parts[3]);
-            
-            RoomData roomData = rooms.get(currentRoom);
-            if (roomData != null) {
-                roomData.updatePlayerStats(playerName, linesCleared, score);
-                broadcastToRoom(currentRoom, message, false);
             }
         }
 
@@ -262,6 +315,26 @@ public class GameServer {
 
         private ClientHandler getClientByName(String playerName) {
             return clients.get(playerName);
+        }
+
+        private void handleMessage(String message) {
+            if (message.startsWith("SCORE_UPDATE:")) {
+                String[] parts = message.split(":");
+                String playerName = parts[1];
+                int score = Integer.parseInt(parts[2]);
+                int linesCleared = Integer.parseInt(parts[3]);
+                int level = Integer.parseInt(parts[4]);
+
+                RoomData roomData = rooms.get(currentRoom);
+                if (roomData != null) {
+                    roomData.updatePlayerStats(playerName, linesCleared, level, score);
+
+                    broadcastToRoom(currentRoom, message, false);
+
+                    System.out.println("Score updated - Player: " + playerName);
+                    System.out.println("Lines: " + linesCleared + ", Score: " + score);
+                }
+            }
         }
     }
 
