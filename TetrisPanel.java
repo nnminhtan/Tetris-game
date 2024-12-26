@@ -259,13 +259,15 @@ public class TetrisPanel extends Panel implements KeyListener {
 	}
 
 	protected void sendGarbage(int id, int send) {
-		if (numOfPlayers == 1)
+		if (numOfPlayers == 1 || send <= 0) {
 			return;
-		int rand = (int) (Math.random() * (numOfPlayers - 1));
-		if (rand >= id)
-			rand++;
-		screens[rand].addGarbage(send);
-		// System.out.println("SENT " + send);
+		}
+		
+		// Send garbage lines to opponent through network
+		if (pw != null) {
+			pw.println("GARBAGE:" + playerNames[0] + ":" + send);
+			System.out.println("Sending " + send + " garbage lines to opponent");
+		}
 	}
 
 	public void updateOpponentState(String gameState) {
@@ -352,5 +354,17 @@ public class TetrisPanel extends Panel implements KeyListener {
 		g.setFont(new Font("Arial", Font.BOLD, 24));
 		String message = winner + " wins!";
 		g.drawString(message, getWidth()/2 - 50, getHeight()/2);
+	}
+
+	public void handleGarbageLines(String message) {
+		String[] parts = message.split(":");
+		String sender = parts[1];
+		int lines = Integer.parseInt(parts[2]);
+		
+		// Only add garbage if we're the receiving player
+		if (!sender.equals(playerNames[0])) {
+			screens[0].addGarbageLines(lines);
+			repaint();
+		}
 	}
 }

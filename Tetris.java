@@ -364,22 +364,17 @@ public class Tetris {
 	}
 
 	private int calculateGarbageLines(int numCleared) {
-		// Battle mechanics:
-		// Single line = 0 garbage
-		// Double line = 1 garbage
-		// Triple line = 2 garbage
-		// Tetris (4 lines) = 4 garbage
-		// Additional garbage for combos
+		// Base garbage calculation
 		int baseGarbage = 0;
 		switch (numCleared) {
 			case 2:
-				baseGarbage = 1;
+				baseGarbage = 1;  // Double - 1 line
 				break;
 			case 3:
-				baseGarbage = 2;
+				baseGarbage = 2;  // Triple - 2 lines
 				break;
 			case 4:
-				baseGarbage = 4;
+				baseGarbage = 4;  // Tetris - 4 lines
 				break;
 		}
 
@@ -639,5 +634,38 @@ public class Tetris {
 
 	public PlayerData getPlayerData() {
 		return playerData;
+	}
+
+	private void checkLines() {
+		int cleared = 0;
+		for (int i = 21; i >= 0; i--) {
+			boolean full = true;
+			for (int j = 0; j < 10; j++) {
+				if (grid[i][j] == 0) {
+					full = false;
+					break;
+				}
+			}
+			if (full) {
+				cleared++;
+				// Move all lines above down
+				for (int k = i; k > 0; k--) {
+					for (int j = 0; j < 10; j++) {
+						grid[k][j] = grid[k - 1][j];
+					}
+				}
+				i++; // Check the same row again
+			}
+		}
+		
+		if (cleared > 0) {
+			linesCleared += cleared;
+			// Calculate garbage lines to send
+			int garbageLines = calculateGarbageLines(cleared);
+			panel.sendGarbage(id, garbageLines);
+			
+			// Update score and level
+			adjustLevel();
+		}
 	}
 }
