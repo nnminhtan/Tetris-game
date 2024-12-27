@@ -91,19 +91,18 @@ public class TetrisPanel extends Panel implements KeyListener {
 		if (screens[0] != null) {
 			PlayerData playerData = screens[0].getPlayerData();
 			int linesCleared = screens[0].getLinesCleared();
-			int score = linesCleared * 100;
+			int score = screens[0].getScore(); // Get actual score instead of calculating
 
-			// Gửi điểm số qua mạng cho đối thủ
+			// Send score update to opponent
 			String scoreMessage = String.format("SCORE_UPDATE:%s:%d:%d:%d",
-					playerNames[0], // tên người gửi
-					score, // điểm số
-					linesCleared, // số dòng đã xóa
-					playerData.getLevel() // level
+					playerNames[0],
+					score,
+					linesCleared,
+					playerData.getLevel()
 			);
 			pw.println(scoreMessage);
-			System.out.println("Sending score to opponent: " + score);
 
-			// Gửi trạng thái grid
+			// Send grid state
 			StringBuilder gridState = new StringBuilder("GRID_STATE:");
 			for (int i = 0; i < 22; i++) {
 				for (int j = 0; j < 10; j++) {
@@ -259,14 +258,21 @@ public class TetrisPanel extends Panel implements KeyListener {
 	}
 
 	protected void sendGarbage(int id, int send) {
-		if (numOfPlayers == 1 || send <= 0) {
-			return;
-		}
+		if (numOfPlayers == 1 || send <= 0) return;
 		
-		// Send garbage lines to opponent through network
 		if (pw != null) {
-			pw.println("GARBAGE:" + playerNames[0] + ":" + send);
-			System.out.println("Sending " + send + " garbage lines to opponent");
+			String garbageMessage = String.format("GARBAGE:%s:%d", playerNames[id], send);
+			pw.println(garbageMessage);
+		}
+	}
+
+	public void handleGarbageLines(String message) {
+		String[] parts = message.split(":");
+		String sender = parts[1];
+		int lines = Integer.parseInt(parts[2]);
+		
+		if (!sender.equals(playerNames[0])) {
+			screens[0].addGarbageLines(lines);
 		}
 	}
 
@@ -354,17 +360,5 @@ public class TetrisPanel extends Panel implements KeyListener {
 		g.setFont(new Font("Arial", Font.BOLD, 24));
 		String message = winner + " wins!";
 		g.drawString(message, getWidth()/2 - 50, getHeight()/2);
-	}
-
-	public void handleGarbageLines(String message) {
-		String[] parts = message.split(":");
-		String sender = parts[1];
-		int lines = Integer.parseInt(parts[2]);
-		
-		// Only add garbage if we're the receiving player
-		if (!sender.equals(playerNames[0])) {
-			screens[0].addGarbageLines(lines);
-			repaint();
-		}
 	}
 }
