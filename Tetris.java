@@ -265,9 +265,13 @@ public class Tetris {
 		gi.setColor(UIColor);
 		gi.drawString("LINES CLEARED: " + linesCleared, panelC + 10, panelR + 10);
 		gi.drawString("CURRENT LEVEL: " + level, panelC + 10, panelR + 20);
-		gi.drawString("SCORE: " + (linesCleared * 100), panelC + 10, panelR + 30);
+		if (playerData != null) {
+			gi.drawString("SCORE: " + playerData.getScore(), panelC + 10, panelR + 30);
+		} else {
+			gi.drawString("SCORE: " + 0, panelC + 10, panelR + 30);
+		}
 
-		// Hiển thị điểm của đối thủ
+		// Display opponent score
 		if (playerData != null) {
 			int opponentScore = playerData.getOpponentScore();
 			gi.drawString("OPPONENT SCORE: " + opponentScore, panelC + 10, panelR + 40);
