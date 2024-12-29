@@ -4,6 +4,13 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.SwingUtilities;
+import javax.swing.JDialog;
+import javax.swing.JList;
+import javax.swing.JScrollPane;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JOptionPane;
+import javax.swing.DefaultListModel;
 
 public class Window extends Frame {
     private static final long serialVersionUID = -1324363758675184283L;
@@ -22,7 +29,7 @@ public class Window extends Frame {
     }
 
     private void connectToServer(String clientName) throws IOException {
-        Socket socket = new Socket("192.168.0.101", 8888);
+        Socket socket = new Socket("localhost", 8888);
         br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         pw = new PrintWriter(socket.getOutputStream(), true);
         System.out.println("Connected to server!");
@@ -37,6 +44,14 @@ public class Window extends Frame {
         try {
             String message;
             while ((message = br.readLine()) != null) {
+                final String finalMessage = message;
+                if (message.startsWith("ROOM_LIST:")) {
+                    SwingUtilities.invokeLater(() -> {
+                        System.out.println("Received room list: " + finalMessage);
+                        String[] rooms = finalMessage.substring(10).split(",");
+                        updateRoomList(rooms);
+                    });
+                }
                 if (message.startsWith("ROOM_CREATED:")) {
                     System.out.println("Room created: " + message.split(":")[1]);
                 } else if (message.startsWith("JOINED_ROOM:")) {
@@ -77,6 +92,32 @@ public class Window extends Frame {
         }
     }
 
+    private void updateRoomList(String[] rooms) {
+        for (java.awt.Window window : java.awt.Window.getWindows()) {
+            for (java.awt.Window dialog : window.getOwnedWindows()) {
+                if (dialog instanceof JDialog && ((JDialog) dialog).getTitle().equals("Available Rooms")) {
+                    JDialog roomDialog = (JDialog) dialog;
+                    for (Component comp : roomDialog.getContentPane().getComponents()) {
+                        if (comp instanceof JScrollPane) {
+                            JScrollPane scrollPane = (JScrollPane) comp;
+                            if (scrollPane.getViewport().getView() instanceof JList) {
+                                JList<String> roomList = (JList<String>) scrollPane.getViewport().getView();
+                                DefaultListModel<String> model = (DefaultListModel<String>) roomList.getModel();
+                                model.clear();
+                                for (String room : rooms) {
+                                    if (!room.isEmpty()) {
+                                        model.addElement(room);
+                                        System.out.println("Added room to list: " + room);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private void setupRoomSelectionUI() {
         setTitle("Tetris Battle - " + userName);
         setSize(400, 300);
@@ -104,11 +145,46 @@ public class Window extends Frame {
     }
 
     private void joinRoom() {
-        String roomName = javax.swing.JOptionPane.showInputDialog("Enter room name");
-        if (roomName != null && !roomName.trim().isEmpty()) {
-            pw.println("JOIN " + roomName);
-            currentRoom = roomName;
-        }
+        JDialog dialog = new JDialog(this, "Available Rooms", true);
+        dialog.setSize(300, 400);
+        dialog.setLayout(new BorderLayout());
+        
+        DefaultListModel<String> listModel = new DefaultListModel<>();
+        JList<String> roomList = new JList<>(listModel);
+        JScrollPane scrollPane = new JScrollPane(roomList);
+        
+        JPanel buttonsPanel = new JPanel();
+        JButton refreshButton = new JButton("Refresh");
+        JButton joinButton = new JButton("Join");
+        JButton cancelButton = new JButton("Cancel");
+        
+        refreshButton.addActionListener(e -> pw.println("GET_ROOMS"));
+        
+        joinButton.addActionListener(e -> {
+            String selectedRoom = roomList.getSelectedValue();
+            if (selectedRoom != null) {
+                pw.println("JOIN " + selectedRoom);
+                currentRoom = selectedRoom;
+                dialog.dispose();
+            } else {
+                JOptionPane.showMessageDialog(dialog, "Please select a room");
+            }
+        });
+        
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        buttonsPanel.add(refreshButton);
+        buttonsPanel.add(joinButton);
+        buttonsPanel.add(cancelButton);
+        
+        dialog.add(scrollPane, BorderLayout.CENTER);
+        dialog.add(buttonsPanel, BorderLayout.SOUTH);
+
+        // Request initial room list
+        pw.println("GET_ROOMS");
+        
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
     private void startGame() {

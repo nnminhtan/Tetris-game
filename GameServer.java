@@ -175,6 +175,8 @@ public class GameServer {
                         handleGarbageLines(message);
                     } else if (message.startsWith("SCORE_UPDATE:")) {
                         handleScoreUpdate(message);
+                    } else if (message.equals("GET_ROOMS")) {
+                        sendRoomList();
                     }
                 }
             } catch (IOException e) {
@@ -335,6 +337,40 @@ public class GameServer {
                 }
             }
         }
+
+        private void sendRoomList() {
+            List<String> availableRooms = new ArrayList<>();
+            for (Map.Entry<String, RoomData> entry : rooms.entrySet()) {
+                if (!entry.getValue().isFull()) {
+                    availableRooms.add(entry.getKey());
+                }
+            }
+            String roomList = "ROOM_LIST:" + String.join(",", availableRooms);
+            out.println(roomList);
+        }
+
+        private void broadcastRoomList() {
+            List<String> availableRooms = new ArrayList<>();
+            for (Map.Entry<String, RoomData> entry : rooms.entrySet()) {
+                if (!entry.getValue().isFull()) {
+                    availableRooms.add(entry.getKey());
+                }
+            }
+            String roomList = "ROOM_LIST:" + String.join(",", availableRooms);
+            for (ClientHandler client : clients.values()) {
+                client.out.println(roomList);
+            }
+        }
+    }
+
+    private static List<String> getAvailableRooms() {
+        List<String> availableRooms = new ArrayList<>();
+        for (Map.Entry<String, RoomData> entry : rooms.entrySet()) {
+            if (!entry.getValue().isFull()) {
+                availableRooms.add(entry.getKey());
+            }
+        }
+        return availableRooms;
     }
 
     public static void main(String[] args) {
