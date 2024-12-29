@@ -22,7 +22,7 @@ public class Window extends Frame {
     }
 
     private void connectToServer(String clientName) throws IOException {
-        Socket socket = new Socket("localhost", 8888);
+        Socket socket = new Socket("192.168.0.101", 8888);
         br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         pw = new PrintWriter(socket.getOutputStream(), true);
         System.out.println("Connected to server!");

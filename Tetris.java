@@ -177,6 +177,8 @@ public class Tetris {
 
 	private PlayerData playerData;
 
+	private int numLinesInCurrentCombo = 0;  // Add this field to track lines in current combo
+
 	public Tetris(int x, int y, TetrisPanel panel, int id, String playerName) {
 		this.panel = panel;
 		this.playerName = playerName;
@@ -312,6 +314,8 @@ public class Tetris {
 	// incremented
 	private int clearLines() {
 		int numCleared = 0;
+		boolean hasCleared = false;
+		
 		while (true) {
 			int index = -1;
 			for (int j = 0; j < 22; j++) {
@@ -341,24 +345,43 @@ public class Tetris {
 			}
 			linesCleared++;
 			numCleared++;
-			
-			// Calculate and update score
-			int baseScore = 100; // Base score per line
-			int levelMultiplier = level + 1;
-			int scoreIncrease = baseScore * numCleared * levelMultiplier;
+			hasCleared = true;
+		}
+		
+		if (hasCleared) {
+			// Calculate score for this combo
+			int scoreIncrease = calculateScore(numCleared);
 			
 			if (playerData != null) {
 				int currentScore = playerData.getScore();
-				playerData.setScore(currentScore + scoreIncrease);
+				int newScore = currentScore + scoreIncrease;  // Accumulate the score
+				
+				System.out.println("Calculating new score: current=" + currentScore + 
+								 ", increase=" + scoreIncrease + ", new=" + newScore);
+								 
+				playerData.setScore(newScore);  // Set the accumulated score
 				playerData.setLinesCleared(linesCleared);
 				if (pw != null) {
-					pw.println("SCORE_UPDATE:" + playerName + ":" + playerData.getScore() + ":" + linesCleared + ":" + level);
+					pw.println("SCORE_UPDATE:" + playerName + ":" + newScore + ":" + 
+							  linesCleared + ":" + level);
 				}
 			}
 		}
+		
 		return numCleared;
 	}
 
+	private int calculateScore(int numCleared) {
+		switch (numCleared) {
+			case 1: return 100;
+			case 2: return 300;
+			case 3: return 500;
+			case 4: return 800;
+			default: return numCleared * 100;
+		}
+	}
+
+	// Add this method to handle combo reset
 	private void handleLineClears(int numCleared) {
 		if (numCleared > 0) {
 			combo++;
@@ -369,6 +392,7 @@ public class Tetris {
 			}
 		} else {
 			combo = 0;
+			numLinesInCurrentCombo = 0;  // Reset lines count when combo breaks
 		}
 	}
 

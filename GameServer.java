@@ -174,7 +174,7 @@ public class GameServer {
                     } else if (message.startsWith("GARBAGE:")) {
                         handleGarbageLines(message);
                     } else if (message.startsWith("SCORE_UPDATE:")) {
-                        handleMessage(message);
+                        handleScoreUpdate(message);
                     }
                 }
             } catch (IOException e) {
@@ -248,18 +248,13 @@ public class GameServer {
                 String[] parts = gameState.split(",");
                 int linesCleared = Integer.parseInt(parts[parts.length - 3]);
                 int level = Integer.parseInt(parts[parts.length - 2]);
-                int score = linesCleared * 100;
-
+                int score = roomData.getPlayerData(playerName).getScore();
+                
                 roomData.updatePlayerStats(playerName, linesCleared, level, score);
-
-                // Gửi điểm số cho tất cả người chơi trong phòng
+                
                 String scoreUpdate = String.format("SCORE_UPDATE:%s:%d:%d:%d",
                         playerName, score, linesCleared, level);
                 broadcastToRoom(currentRoom, scoreUpdate, false);
-
-                System.out.println("Broadcasting score update in room " + currentRoom);
-                System.out.println("From player: " + playerName);
-                System.out.println("Score: " + score + ", Lines: " + linesCleared);
             }
         }
 
@@ -317,22 +312,26 @@ public class GameServer {
             return clients.get(playerName);
         }
 
-        private void handleMessage(String message) {
-            if (message.startsWith("SCORE_UPDATE:")) {
-                String[] parts = message.split(":");
-                String playerName = parts[1];
-                int score = Integer.parseInt(parts[2]);
+        private void handleScoreUpdate(String message) {
+            String[] parts = message.split(":");
+            if (parts.length >= 5) {
+                String senderName = parts[1];
+                int newScore = Integer.parseInt(parts[2]);
                 int linesCleared = Integer.parseInt(parts[3]);
                 int level = Integer.parseInt(parts[4]);
 
                 RoomData roomData = rooms.get(currentRoom);
                 if (roomData != null) {
-                    roomData.updatePlayerStats(playerName, linesCleared, level, score);
+                    // Update with the new accumulated score
+                    roomData.updatePlayerStats(senderName, linesCleared, level, newScore);
 
-                    broadcastToRoom(currentRoom, message, false);
+                    // Broadcast the accumulated score to all players
+                    String scoreUpdate = String.format("SCORE_UPDATE:%s:%d:%d:%d",
+                            senderName, newScore, linesCleared, level);
+                    broadcastToRoom(currentRoom, scoreUpdate, false);
 
-                    System.out.println("Score updated - Player: " + playerName);
-                    System.out.println("Lines: " + linesCleared + ", Score: " + score);
+                    System.out.println("Score updated - Player: " + senderName);
+                    System.out.println("Lines: " + linesCleared + ", Score: " + newScore);
                 }
             }
         }
