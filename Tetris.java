@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 
 import javax.swing.SwingUtilities;
 
+// Core Tetris game logic and mechanics
 public class Tetris {
 	// grid of color ids that stores what kind of block is where
 	private int[][] grid = new int[22][10];
@@ -179,6 +180,7 @@ public class Tetris {
 
 	private int numLinesInCurrentCombo = 0;  // Add this field to track lines in current combo
 
+	// Initializes game instance with player data
 	public Tetris(int x, int y, TetrisPanel panel, int id, String playerName) {
 		this.panel = panel;
 		this.playerName = playerName;

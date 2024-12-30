@@ -12,8 +12,8 @@ import javax.swing.JPanel;
 import javax.swing.JOptionPane;
 import javax.swing.DefaultListModel;
 
+// Main window class that handles the game client interface
 public class Window extends Frame {
-    private static final long serialVersionUID = -1324363758675184283L;
     private BufferedReader br;
     private PrintWriter pw;
     private String userName;
@@ -22,12 +22,14 @@ public class Window extends Frame {
     private List<String> roomPlayers = new ArrayList<>();
     private String currentRoom;
 
+    // Constructor: Initializes the window with client name and sets up connection
     public Window(String clientName) throws IOException {
         this.userName = clientName;
         connectToServer(clientName);
         setupRoomSelectionUI();
     }
 
+    // Establishes connection to the server and starts message listening thread
     private void connectToServer(String clientName) throws IOException {
         Socket socket = new Socket("localhost", 8888);
         br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -40,6 +42,7 @@ public class Window extends Frame {
         new Thread(this::handleServerMessages).start();
     }
 
+    // Continuously listens for and handles incoming server messages
     private void handleServerMessages() {
         try {
             String message;
@@ -85,6 +88,13 @@ public class Window extends Frame {
                         gamePanel.updateOpponentInfo(senderName, score, lines, level);
                         System.out.println("Received score from " + senderName + ": " + score);
                     }
+                } else if (message.startsWith("GAME_OVER:")) {
+                    String winner = message.split(":")[1];
+                    if (gamePanel != null) {
+                        SwingUtilities.invokeLater(() -> {
+                            gamePanel.handleGameOver(winner);
+                        });
+                    }
                 }
             }
         } catch (IOException e) {
@@ -92,6 +102,7 @@ public class Window extends Frame {
         }
     }
 
+    // Updates the room list UI when new room data is received
     private void updateRoomList(String[] rooms) {
         for (java.awt.Window window : java.awt.Window.getWindows()) {
             for (java.awt.Window dialog : window.getOwnedWindows()) {
@@ -118,6 +129,7 @@ public class Window extends Frame {
         }
     }
 
+    // Sets up the initial UI with create/join room buttons
     private void setupRoomSelectionUI() {
         setTitle("Tetris Battle - " + userName);
         setSize(400, 300);
@@ -138,12 +150,14 @@ public class Window extends Frame {
         setVisible(true);
     }
 
+    // Creates a new game room with unique identifier
     private void createRoom() {
         String roomName = "Room_" + userName + "_" + System.currentTimeMillis();
         pw.println("CREATE " + roomName);
         currentRoom = roomName;
     }
 
+    // Opens dialog for joining existing rooms
     private void joinRoom() {
         JDialog dialog = new JDialog(this, "Available Rooms", true);
         dialog.setSize(300, 400);
@@ -187,16 +201,18 @@ public class Window extends Frame {
         dialog.setVisible(true);
     }
 
+    // Initializes the game panel when a game starts
     private void startGame() {
         remove(roomPanel);
-        String[] players = { userName, getOpponentName() }; // Lấy tên đối thủ thực tế
-        gamePanel = new TetrisPanel(2, players, pw, currentRoom); // Truyền tên phòng
+        String[] players = { userName, getOpponentName() };
+        gamePanel = new TetrisPanel(2, players, pw, currentRoom);
         add(gamePanel);
         gamePanel.requestFocusInWindow();
         validate();
         repaint();
     }
 
+    // Processes incoming garbage lines from opponent
     private void handleGarbageLines(String message) {
         if (gamePanel != null) {
             String[] parts = message.split(":");
@@ -208,6 +224,7 @@ public class Window extends Frame {
         }
     }
 
+    // Handles opponent disconnection events
     private void handlePlayerDisconnect(String message) {
         String disconnectedPlayer = message.split(":")[1];
         if (gamePanel != null) {
@@ -218,6 +235,7 @@ public class Window extends Frame {
         }
     }
 
+    // Updates the opponent's grid display
     private void updateOpponentGrid(String message) {
         String[] parts = message.split(":");
         if (parts.length > 1) {
@@ -234,6 +252,7 @@ public class Window extends Frame {
         }
     }
 
+    // Retrieves opponent's name from room information
     private String getOpponentName() {
         if (currentRoom != null) {
             String[] parts = currentRoom.split("_");

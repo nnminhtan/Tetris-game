@@ -3,11 +3,13 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+// Main server class managing multiple game rooms and client connections
 public class GameServer {
     private static final int PORT = 8888;
     private static ConcurrentHashMap<String, RoomData> rooms = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, ClientHandler> clients = new ConcurrentHashMap<>();
 
+    // RoomData inner class: Manages state for a single game room
     static class RoomData {
         private String roomId;
         private PlayerData player1;
@@ -19,6 +21,7 @@ public class GameServer {
             this.gameStarted = false;
         }
 
+        // Adds a new player to the room if space available
         public void addPlayer(String playerName) {
             if (player1 == null) {
                 player1 = new PlayerData(playerName);
@@ -27,16 +30,18 @@ public class GameServer {
             }
         }
 
-        public void updatePlayerStats(String playerName, int linesCleared, int level, int score) {
+        // Updates player's game statistics during gameplay
+        public void updatePlayerStats(String playerName, int lines, int level, int score) {
             PlayerData player = getPlayerData(playerName);
             if (player != null) {
-                player.setLinesCleared(linesCleared);
+                player.setLinesCleared(lines);
                 player.setLevel(level);
                 player.setScore(score);
                 printRoomStatus();
             }
         }
 
+        // Retrieves player data by player name
         public PlayerData getPlayerData(String playerName) {
             if (player1 != null && player1.getName().equals(playerName)) {
                 return player1;
@@ -46,6 +51,7 @@ public class GameServer {
             return null;
         }
 
+        // Gets opponent data for a given player
         public PlayerData getOpponentData(String playerName) {
             if (player1 != null && player1.getName().equals(playerName)) {
                 return player2;
@@ -80,6 +86,7 @@ public class GameServer {
             // System.out.println("------------------------\n");
         }
 
+        // Checks if room has both players
         public boolean isFull() {
             return player1 != null && player2 != null;
         }
@@ -88,6 +95,7 @@ public class GameServer {
             this.gameStarted = started;
         }
 
+        // Gets the name of the opponent for a given player
         public String getOpponentName(String playerName) {
             if (player1 != null && player1.getName().equals(playerName)) {
                 return player2 != null ? player2.getName() : "Waiting...";
@@ -115,6 +123,7 @@ public class GameServer {
             return players;
         }
 
+        // Removes a player from the room
         public void removePlayer(String playerName) {
             if (player1 != null && player1.getName().equals(playerName)) {
                 player1 = null;
@@ -134,8 +143,9 @@ public class GameServer {
             new ClientHandler(clientSocket).start();
         }
     }
-
-    private static class ClientHandler extends Thread {
+    // private static class ClientHandler extends Thread {
+    // ClientHandler inner class: Manages individual client connections
+    class ClientHandler extends Thread {
         private Socket socket;
         private String clientName;
         private String currentRoom;
@@ -154,6 +164,7 @@ public class GameServer {
             }
         }
 
+        // Handles all incoming client messages and routes to appropriate handlers
         @Override
         public void run() {
             try {
@@ -177,6 +188,9 @@ public class GameServer {
                         handleScoreUpdate(message);
                     } else if (message.equals("GET_ROOMS")) {
                         sendRoomList();
+                    } else if (message.startsWith("GAME_OVER:")) {
+                        String loser = message.split(":")[1];
+                        handleGameOver(loser);
                     }
                 }
             } catch (IOException e) {
@@ -186,6 +200,7 @@ public class GameServer {
             }
         }
 
+        // Creates new game room and notifies clients
         private void handleCreateRoom(String roomName) {
             RoomData roomData = new RoomData(roomName);
             roomData.addPlayer(clientName);
@@ -196,6 +211,7 @@ public class GameServer {
             broadcastRoomInfo(roomName);
         }
 
+        // Processes room join requests and starts game if room full
         private void handleJoinRoom(String roomName) {
             RoomData roomData = rooms.get(roomName);
             if (roomData != null && !roomData.isFull()) {
@@ -216,6 +232,7 @@ public class GameServer {
             }
         }
 
+        // Broadcasts room information to all players in a room
         private void broadcastRoomInfo(String roomName) {
             RoomData roomData = rooms.get(roomName);
             if (roomData != null) {
@@ -236,6 +253,7 @@ public class GameServer {
             }
         }
 
+        // Checks and updates room status
         private void checkRoomStatus(String roomName) {
             RoomData roomData = rooms.get(roomName);
             if (roomData != null && roomData.isFull()) {
@@ -244,6 +262,7 @@ public class GameServer {
             }
         }
 
+        // Broadcasts game state updates to all players in room
         private void handleGameState(String playerName, String gameState) {
             RoomData roomData = rooms.get(currentRoom);
             if (roomData != null) {
@@ -275,6 +294,7 @@ public class GameServer {
             }
         }
 
+        // Handles garbage line attacks between players
         private void handleGarbageLines(String message) {
             if (currentRoom != null) {
                 String[] parts = message.split(":");
@@ -284,6 +304,7 @@ public class GameServer {
             }
         }
 
+        // Manages client disconnection cleanup
         private void handleDisconnect() {
             if (currentRoom != null) {
                 RoomData roomData = rooms.get(currentRoom);
@@ -314,6 +335,7 @@ public class GameServer {
             return clients.get(playerName);
         }
 
+        // Handles score updates from players
         private void handleScoreUpdate(String message) {
             String[] parts = message.split(":");
             if (parts.length >= 5) {
@@ -338,6 +360,7 @@ public class GameServer {
             }
         }
 
+        // Sends room list to requesting client
         private void sendRoomList() {
             List<String> availableRooms = new ArrayList<>();
             for (Map.Entry<String, RoomData> entry : rooms.entrySet()) {
@@ -349,6 +372,7 @@ public class GameServer {
             out.println(roomList);
         }
 
+        // Broadcasts room list to all connected clients
         private void broadcastRoomList() {
             List<String> availableRooms = new ArrayList<>();
             for (Map.Entry<String, RoomData> entry : rooms.entrySet()) {
@@ -359,6 +383,16 @@ public class GameServer {
             String roomList = "ROOM_LIST:" + String.join(",", availableRooms);
             for (ClientHandler client : clients.values()) {
                 client.out.println(roomList);
+            }
+        }
+
+        private void handleGameOver(String loser) {
+            RoomData roomData = rooms.get(currentRoom);
+            if (roomData != null) {
+                // The player who didn't lose is the winner
+                String winner = roomData.getOpponentName(loser);
+                // Broadcast game over to all players in room
+                broadcastToRoom(currentRoom, "GAME_OVER:" + winner, false);
             }
         }
     }

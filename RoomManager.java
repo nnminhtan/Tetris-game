@@ -3,6 +3,7 @@ import java.io.PrintWriter;
 import java.util.List;
 import javax.swing.*;
 
+// Manages the room UI and player interactions within a room
 public class RoomManager extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainPanel;
@@ -55,6 +56,7 @@ public class RoomManager extends JFrame {
     //     return panel;
     // }
 
+    // Constructor: Creates room manager window with room information
     public RoomManager(String roomName, List<String> players, String clientName) {
         setTitle("Room: " + roomName);
         setSize(400, 300);
@@ -65,6 +67,8 @@ public class RoomManager extends JFrame {
     
         setVisible(true);
     }
+
+    // Creates the room information panel with player list and controls
     private JPanel createRoomInfoPanel(String roomName, List<String> players, String clientName) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));

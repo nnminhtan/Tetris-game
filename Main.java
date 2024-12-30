@@ -1,7 +1,9 @@
 import java.io.IOException;
 import java.util.Scanner;
 
+// Main entry point of the application
 public class Main {
+    // Main method: Handles initial setup and launches either server or client
     public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in);
 

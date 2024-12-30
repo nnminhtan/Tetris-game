@@ -3,9 +3,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import javax.swing.JOptionPane;
 
 public class TetrisPanel extends Panel implements KeyListener {
-	private static final long serialVersionUID = -8444879183679955468L;
 
 	// variables for double buffered display
 	private BufferedImage bi;
@@ -46,6 +46,8 @@ public class TetrisPanel extends Panel implements KeyListener {
 	};
 
 	private RoomData roomData;
+
+	private boolean gameOverAnnounced = false;
 
 	TetrisPanel(int numOfPlayers, String[] playerNames, PrintWriter pw, String roomName) {
 		this.pw = pw;
@@ -255,6 +257,11 @@ public class TetrisPanel extends Panel implements KeyListener {
 	protected void setGameOver() {
 		for (int i = 0; i < numOfPlayers; i++)
 			screens[i].isGameOver = true;
+		
+		// Notify server about game over
+		if (pw != null) {
+			pw.println("GAME_OVER:" + playerNames[0]);
+		}
 	}
 
 	protected void sendGarbage(int id, int send) {
@@ -347,7 +354,8 @@ public class TetrisPanel extends Panel implements KeyListener {
 	}
 
 	public void checkGameOver() {
-		if (screens[0].isGameOver) {
+		if (screens[0].isGameOver && !gameOverAnnounced) {
+			gameOverAnnounced = true;
 			String winner = playerNames[1]; // Opponent wins
 			pw.println("GAME_OVER:" + winner);
 			displayGameOverMessage(winner);
@@ -360,5 +368,20 @@ public class TetrisPanel extends Panel implements KeyListener {
 		g.setFont(new Font("Arial", Font.BOLD, 24));
 		String message = winner + " wins!";
 		g.drawString(message, getWidth()/2 - 50, getHeight()/2);
+	}
+
+	public void announceWinner(String winner) {
+		JOptionPane.showMessageDialog(this, 
+			winner.equals(playerNames[0]) ? "You Won!" : winner + " Won!", 
+			"Game Over", 
+			JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	public void handleGameOver(String winner) {
+		if (!gameOverAnnounced) {
+			gameOverAnnounced = true;
+			setGameOver();
+			announceWinner(winner);
+		}
 	}
 }
