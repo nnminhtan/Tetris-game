@@ -25,7 +25,7 @@ public class RoomData {
         }
         return "Unknown";
     }
-
+    // Update the score of the player
     public void updateScore(String playerName, int score) {
         if (player1 != null && player1.getName().equals(playerName)) {
             player1.setScore(score);
@@ -34,7 +34,7 @@ public class RoomData {
         }
         printRoomStatus();
     }
-
+    // Get the score of the opponent
     public int getOpponentScore(String playerName) {
         if (player1 != null && player1.getName().equals(playerName)) {
             return player2 != null ? player2.getScore() : 0;
@@ -44,6 +44,7 @@ public class RoomData {
         return 0;
     }
 
+    // Get the player data
     public PlayerData getPlayerData(String playerName) {
         if (player1 != null && player1.getName().equals(playerName)) {
             return player1;
@@ -53,6 +54,7 @@ public class RoomData {
         return null;
     }
 
+    // Update the player stats
     public void updatePlayerStats(String playerName, int linesCleared, int level, int score) {
         PlayerData player = getPlayerData(playerName);
         if (player != null) {
@@ -61,7 +63,7 @@ public class RoomData {
             player.setScore(score);
         }
     }
-
+    // Get the opponent data
     public PlayerData getOpponentData(String playerName) {
         if (player1 != null && player1.getName().equals(playerName)) {
             return player2;
@@ -70,7 +72,7 @@ public class RoomData {
         }
         return null;
     }
-
+    // Print the room status
     public void printRoomStatus() {
         System.out.println(roomId + ": " +
                 (player1 != null ? "Player 1 (" + player1.getName() + ") - score: " + player1.getScore()

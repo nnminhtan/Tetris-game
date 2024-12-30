@@ -1,12 +1,12 @@
 public class Piece {
 	// constants for the starting position for each piece
-	private final Point[][] pieces = { { mp(0, 4), mp(0, 5), mp(1, 4), mp(1, 5) },
-			{ mp(1, 3), mp(1, 4), mp(1, 5), mp(1, 6) },
-			{ mp(0, 3), mp(1, 3), mp(1, 4), mp(1, 5) },
-			{ mp(0, 5), mp(1, 3), mp(1, 4), mp(1, 5) },
-			{ mp(1, 3), mp(1, 4), mp(0, 4), mp(0, 5) },
-			{ mp(0, 3), mp(0, 4), mp(1, 4), mp(1, 5) },
-			{ mp(1, 3), mp(1, 4), mp(1, 5), mp(0, 4) } };
+	private final Point[][] pieces = { { mp(0, 4), mp(0, 5), mp(1, 4), mp(1, 5) }, // I piece
+			{ mp(1, 3), mp(1, 4), mp(1, 5), mp(1, 6) }, // O piece
+			{ mp(0, 3), mp(1, 3), mp(1, 4), mp(1, 5) }, // T piece
+			{ mp(0, 5), mp(1, 3), mp(1, 4), mp(1, 5) }, // S piece
+			{ mp(1, 3), mp(1, 4), mp(0, 4), mp(0, 5) }, // Z piece
+			{ mp(0, 3), mp(0, 4), mp(1, 4), mp(1, 5) }, // L piece
+			{ mp(1, 3), mp(1, 4), mp(1, 5), mp(0, 4) } }; // J piece
 
 	// auxiliary method to create a new Point object
 	private Point mp(int x, int y) {
@@ -53,10 +53,10 @@ public class Piece {
 
 	// represents the active piece
 	static class Active {
-		Point[] pos;
-		int id;
-		int lor, hir, loc, hic;
-		int state = 0;
+		Point[] pos; //Position of the piece
+		int id; //ID of the piece
+		int lor, hir, loc, hic; //Lower and higher row and column bounds
+		int state = 0; //State of the piece
 
 		Active(Point[] pos, int id) {
 			this.pos = pos;
@@ -66,7 +66,7 @@ public class Piece {
 				hir = 2;
 				loc = 3;
 				hic = 5;
-			} else {
+			} else { // I piece
 				lor = 0;
 				hir = 3;
 				loc = 3;

@@ -201,8 +201,7 @@ public class Tetris {
 				if (e.getKeyCode() == KeyEvent.VK_Q) {
 					// Navigate back to RoomManager
 					panel.setVisible(false); // Hide the Tetris panel
-					new RoomManager("Room Name", new ArrayList<>(), playerName); // Replace with actual room name and
-																					// player list
+					new RoomManager("Room Name", new ArrayList<>(), playerName); // Replace with actual room name and player list
 				}
 			}
 		});
@@ -228,8 +227,8 @@ public class Tetris {
 	public void displayGrid(Graphics gi) {
 		for (int i = 2; i < 22; i++) {
 			for (int j = 0; j < 10; j++) {
-				gi.setColor(c[grid[i][j]]);
-				gi.fillRect(panelC + j * 25 + 10, panelR + i * 25, 24, 24);
+				gi.setColor(c[grid[i][j]]); //Set the color of the block
+				gi.fillRect(panelC + j * 25 + 10, panelR + i * 25, 24, 24); //Fill the grid with the color of the block
 			}
 		}
 	}
@@ -250,12 +249,12 @@ public class Tetris {
 			}
 			d--;
 			// painting the ghost piece and the active piece
-			gi.setColor(ghostColor);
+			gi.setColor(ghostColor); //Set the color of the ghost piece
 			for (Piece.Point block : curr.pos)
 				if (block.r + d >= 2)
 					gi.fillRect(panelC + block.c * 25 + 10, panelR + (block.r + d) * 25, 24, 24);
 
-			gi.setColor(c[curr.id]);
+			gi.setColor(c[curr.id]); //Set the color of the active piece
 			for (Piece.Point block : curr.pos)
 				if (block.r >= 2)
 					gi.fillRect(panelC + block.c * 25 + 10, panelR + block.r * 25, 24, 24);
@@ -387,46 +386,46 @@ public class Tetris {
 		}
 	}
 
-	// Add this method to handle combo reset
-	private void handleLineClears(int numCleared) {
-		if (numCleared > 0) {
-			combo++;
-			// Calculate garbage lines to send
-			int garbageLines = calculateGarbageLines(numCleared);
-			if (garbageLines > 0) {
-				sendGarbage(garbageLines);
-			}
-		} else {
-			combo = 0;
-			numLinesInCurrentCombo = 0;  // Reset lines count when combo breaks
-		}
-	}
+	// // Add this method to handle combo reset
+	// private void handleLineClears(int numCleared) {
+	// 	if (numCleared > 0) {
+	// 		combo++;
+	// 		// Calculate garbage lines to send
+	// 		int garbageLines = calculateGarbageLines(numCleared);
+	// 		if (garbageLines > 0) {
+	// 			sendGarbage(garbageLines);
+	// 		}
+	// 	} else {
+	// 		combo = 0;
+	// 		numLinesInCurrentCombo = 0;  // Reset lines count when combo breaks
+	// 	}
+	// }
 
-	private int calculateGarbageLines(int numCleared) {
+	// private int calculateGarbageLines(int numCleared) {
 		// Battle mechanics:
 		// Single line = 0 garbage
 		// Double line = 1 garbage
 		// Triple line = 2 garbage
 		// Tetris (4 lines) = 4 garbage
 		// Additional garbage for combos
-		int baseGarbage = 0;
-		switch (numCleared) {
-			case 2:
-				baseGarbage = 1;
-				break;
-			case 3:
-				baseGarbage = 2;
-				break;
-			case 4:
-				baseGarbage = 4;
-				break;
-		}
+	// 	int baseGarbage = 0;
+	// 	switch (numCleared) {
+	// 		case 2:
+	// 			baseGarbage = 1;
+	// 			break;
+	// 		case 3:
+	// 			baseGarbage = 2;
+	// 			break;
+	// 		case 4:
+	// 			baseGarbage = 4;
+	// 			break;
+	// 	}
 
-		// Add combo bonus (every 2 combos = 1 extra line)
-		int comboBonus = combo / 2;
+	// 	// Add combo bonus (every 2 combos = 1 extra line)
+	// 	int comboBonus = combo / 2;
 
-		return baseGarbage + comboBonus;
-	}
+	// 	return baseGarbage + comboBonus;
+	// }
 
 	public void restart() {
 		curr = null;
@@ -508,9 +507,9 @@ public class Tetris {
 				curr.loc += dc;
 				curr.hir += dr;
 				curr.lor += dr;
-				if (id % 2 == 1)
+				if (id % 2 == 1) //Rotate the piece counterclockwise
 					curr.state = (curr.state + 3) % 4;
-				else
+				else //Rotate the piece clockwise
 					curr.state = (curr.state + 1) % 4;
 				return;
 			}
@@ -568,19 +567,19 @@ public class Tetris {
 		}
 	}
 
-	protected void sendGarbage(int lines) {
-		if (lines > 0 && pw != null) {
-			pw.println("GARBAGE:" + playerName + ":" + lines);
-		}
-	}
+	// protected void sendGarbage(int lines) {
+	// 	if (lines > 0 && pw != null) {
+	// 		pw.println("GARBAGE:" + playerName + ":" + lines);
+	// 	}
+	// }
 
-	public void addGarbage(int lines) {
-		// Existing garbage line addition code...
-		// After adding garbage lines
-		if (panel != null) {
-			panel.sendGameState(); // Call sendGameState through panel reference
-		}
-	}
+	// public void addGarbage(int lines) {
+	// 	// Existing garbage line addition code...
+	// 	// After adding garbage lines
+	// 	if (panel != null) {
+	// 		panel.sendGameState(); // Call sendGameState through panel reference
+	// 	}
+	// }
 
 	// Modify the addGarbageLines method to handle incoming garbage
 	public void addGarbageLines(int lines) {

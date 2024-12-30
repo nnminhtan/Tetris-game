@@ -37,7 +37,7 @@ public class GameServer {
                 player.setLinesCleared(lines);
                 player.setLevel(level);
                 player.setScore(score);
-                printRoomStatus();
+                // printRoomStatus();
             }
         }
 
@@ -61,7 +61,7 @@ public class GameServer {
             return null;
         }
 
-        public void printRoomStatus() {
+        // public void printRoomStatus() {
             // System.out.println("\n" + roomId + " Status:");
             // System.out.println("------------------------");
             // if (player1 != null) {
@@ -84,7 +84,7 @@ public class GameServer {
             // System.out.println("Waiting for Player 2");
             // }
             // System.out.println("------------------------\n");
-        }
+        // }
 
         // Checks if room has both players
         public boolean isFull() {
@@ -253,14 +253,14 @@ public class GameServer {
             }
         }
 
-        // Checks and updates room status
-        private void checkRoomStatus(String roomName) {
-            RoomData roomData = rooms.get(roomName);
-            if (roomData != null && roomData.isFull()) {
-                broadcastToRoom(roomName, "START_GAME", false);
-                roomData.setGameStarted(true);
-            }
-        }
+        // // Checks and updates room status
+        // private void checkRoomStatus(String roomName) {
+        //     RoomData roomData = rooms.get(roomName);
+        //     if (roomData != null && roomData.isFull()) {
+        //         broadcastToRoom(roomName, "START_GAME", false);
+        //         roomData.setGameStarted(true);
+        //     }
+        // }
 
         // Broadcasts game state updates to all players in room
         private void handleGameState(String playerName, String gameState) {
@@ -279,20 +279,20 @@ public class GameServer {
             }
         }
 
-        private int calculateScore(int linesCleared) {
-            switch (linesCleared) {
-                case 1:
-                    return 100;
-                case 2:
-                    return 300;
-                case 3:
-                    return 500;
-                case 4:
-                    return 800;
-                default:
-                    return linesCleared * 100;
-            }
-        }
+        // private int calculateScore(int linesCleared) {
+        //     switch (linesCleared) {
+        //         case 1:
+        //             return 100;
+        //         case 2:
+        //             return 300;
+        //         case 3:
+        //             return 500;
+        //         case 4:
+        //             return 800;
+        //         default:
+        //             return linesCleared * 100;
+        //     }
+        // }
 
         // Handles garbage line attacks between players
         private void handleGarbageLines(String message) {
@@ -318,7 +318,7 @@ public class GameServer {
             }
             clients.remove(clientName);
         }
-
+        //Broadcasts a message to all players in a room
         private void broadcastToRoom(String roomName, String message, boolean excludeSelf) {
             RoomData roomData = rooms.get(roomName);
             if (roomData != null) {
