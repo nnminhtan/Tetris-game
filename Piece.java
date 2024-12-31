@@ -1,12 +1,12 @@
 public class Piece {
 	// constants for the starting position for each piece
-	private final Point[][] pieces = { { mp(0, 4), mp(0, 5), mp(1, 4), mp(1, 5) }, // I piece
-			{ mp(1, 3), mp(1, 4), mp(1, 5), mp(1, 6) }, // O piece
-			{ mp(0, 3), mp(1, 3), mp(1, 4), mp(1, 5) }, // T piece
-			{ mp(0, 5), mp(1, 3), mp(1, 4), mp(1, 5) }, // S piece
-			{ mp(1, 3), mp(1, 4), mp(0, 4), mp(0, 5) }, // Z piece
-			{ mp(0, 3), mp(0, 4), mp(1, 4), mp(1, 5) }, // L piece
-			{ mp(1, 3), mp(1, 4), mp(1, 5), mp(0, 4) } }; // J piece
+	private final Point[][] pieces = { { mp(0, 4), mp(0, 5), mp(1, 4), mp(1, 5) }, // O piece
+			{ mp(1, 3), mp(1, 4), mp(1, 5), mp(1, 6) }, // I piece
+			{ mp(0, 3), mp(1, 3), mp(1, 4), mp(1, 5) }, // L piece
+			{ mp(0, 5), mp(1, 3), mp(1, 4), mp(1, 5) }, // J piece
+			{ mp(1, 3), mp(1, 4), mp(0, 4), mp(0, 5) }, // S piece
+			{ mp(0, 3), mp(0, 4), mp(1, 4), mp(1, 5) }, // Z piece
+			{ mp(1, 3), mp(1, 4), mp(1, 5), mp(0, 4) } }; // T piece
 
 	// auxiliary method to create a new Point object
 	private Point mp(int x, int y) {

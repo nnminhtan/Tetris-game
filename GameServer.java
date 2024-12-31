@@ -372,19 +372,19 @@ public class GameServer {
             out.println(roomList);
         }
 
-        // Broadcasts room list to all connected clients
-        private void broadcastRoomList() {
-            List<String> availableRooms = new ArrayList<>();
-            for (Map.Entry<String, RoomData> entry : rooms.entrySet()) {
-                if (!entry.getValue().isFull()) {
-                    availableRooms.add(entry.getKey());
-                }
-            }
-            String roomList = "ROOM_LIST:" + String.join(",", availableRooms);
-            for (ClientHandler client : clients.values()) {
-                client.out.println(roomList);
-            }
-        }
+        // // Broadcasts room list to all connected clients
+        // private void broadcastRoomList() {
+        //     List<String> availableRooms = new ArrayList<>();
+        //     for (Map.Entry<String, RoomData> entry : rooms.entrySet()) {
+        //         if (!entry.getValue().isFull()) {
+        //             availableRooms.add(entry.getKey());
+        //         }
+        //     }
+        //     String roomList = "ROOM_LIST:" + String.join(",", availableRooms);
+        //     for (ClientHandler client : clients.values()) {
+        //         client.out.println(roomList);
+        //     }
+        // }
 
         private void handleGameOver(String loser) {
             RoomData roomData = rooms.get(currentRoom);
@@ -397,15 +397,15 @@ public class GameServer {
         }
     }
 
-    private static List<String> getAvailableRooms() {
-        List<String> availableRooms = new ArrayList<>();
-        for (Map.Entry<String, RoomData> entry : rooms.entrySet()) {
-            if (!entry.getValue().isFull()) {
-                availableRooms.add(entry.getKey());
-            }
-        }
-        return availableRooms;
-    }
+    // private static List<String> getAvailableRooms() {
+    //     List<String> availableRooms = new ArrayList<>();
+    //     for (Map.Entry<String, RoomData> entry : rooms.entrySet()) {
+    //         if (!entry.getValue().isFull()) {
+    //             availableRooms.add(entry.getKey());
+    //         }
+    //     }
+    //     return availableRooms;
+    // }
 
     public static void main(String[] args) {
         try {

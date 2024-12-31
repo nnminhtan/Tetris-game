@@ -35,14 +35,13 @@ public class TetrisPanel extends Panel implements KeyListener {
 
 	// Color array for Tetris pieces
 	private Color[] c = {
-			Color.BLACK, // 0 - empty
-			Color.BLUE, // 1 - some block color
-			Color.RED, // 2 - some block color
-			Color.GREEN, // 3 - some block color
-			Color.YELLOW, // 4 - some block color
-			Color.CYAN, // 5 - some block color
-			Color.MAGENTA // 6 - some block color
-			// Add more colors as needed for your Tetris pieces
+			Color.BLACK, 
+			Color.BLUE, 
+			Color.RED, 
+			Color.GREEN, 
+			Color.YELLOW, 
+			Color.CYAN,
+			Color.MAGENTA 
 	};
 
 	private RoomData roomData;
@@ -349,8 +348,7 @@ public class TetrisPanel extends Panel implements KeyListener {
 
 	public void updateOpponentGrid(int[][] opponentGrid) {
 		// Logic to update the UI with the opponent's grid
-		// This could involve repainting the panel or updating specific components
-		this.opponentGrid = opponentGrid; // Assuming you have a variable to store the opponent's grid
+		this.opponentGrid = opponentGrid; 
 		repaint(); // Call repaint to refresh the display
 	}
 
